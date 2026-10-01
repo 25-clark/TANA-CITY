@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galerie - Club de Football</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: 'var(--color-primary)', secondary: 'var(--color-secondary)', accent: 'var(--color-accent)' },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Oswald', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-950 text-white font-sans antialiased">
+  <header id="header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-gray-950/90 backdrop-blur border-b border-white/5">
+    <nav class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div id="logo-container" class="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-white/30 shadow">
+          <img id="site-logo" src="assets/logo.png" alt="TANA CITY" class="w-full h-full object-cover">
+          <span id="logo-fallback" class="text-2xl font-display font-bold text-white hidden">TC</span>
+        </div>
+        <span id="site-name" class="text-xl font-display font-bold tracking-wide group-hover:text-primary transition-colors">Club FC</span>
+      </a>
+      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-white/10" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <ul id="nav-menu" class="hidden md:flex items-center gap-8 font-medium">
+        <li><a href="index.html" class="nav-link hover:text-primary transition-colors">Accueil</a></li>
+        <li><a href="equipe.html" class="nav-link hover:text-primary transition-colors">Équipe</a></li>
+        <li><a href="programme.html" class="nav-link hover:text-primary transition-colors">Programme</a></li>
+        <li><a href="galerie.html" class="nav-link active hover:text-primary transition-colors">Galerie</a></li>
+        <li><a href="actualites.html" class="nav-link hover:text-primary transition-colors">Actualités</a></li>
+        <li><a href="contact.html" class="nav-link hover:text-primary transition-colors">Contact</a></li>
+      </ul>
+    </nav>
+    <div id="mobile-menu" class="hidden md:hidden bg-gray-900/95 backdrop-blur border-t border-white/10">
+      <ul class="flex flex-col p-4 gap-2">
+        <li><a href="index.html" class="block py-2 px-4 rounded hover:bg-white/10">Accueil</a></li>
+        <li><a href="equipe.html" class="block py-2 px-4 rounded hover:bg-white/10">Équipe</a></li>
+        <li><a href="programme.html" class="block py-2 px-4 rounded hover:bg-white/10">Programme</a></li>
+        <li><a href="galerie.html" class="block py-2 px-4 rounded hover:bg-white/10">Galerie</a></li>
+        <li><a href="actualites.html" class="block py-2 px-4 rounded hover:bg-white/10">Actualités</a></li>
+        <li><a href="contact.html" class="block py-2 px-4 rounded hover:bg-white/10">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="pt-28 pb-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h1 class="font-display text-4xl md:text-5xl font-bold mb-4">Galerie</h1>
+        <p class="text-gray-400 max-w-xl mx-auto">Photos et vidéos du club. Cliquez pour agrandir.</p>
+      </div>
+      <!-- Album style grid -->
+      <div id="gallery-full" class="album-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/95 backdrop-blur-sm">
+    <button id="lightbox-close" class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 z-10" aria-label="Fermer">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <button id="lightbox-prev" class="absolute left-4 p-3 rounded-full bg-white/10 hover:bg-white/20 z-10" aria-label="Précédent">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <button id="lightbox-next" class="absolute right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 z-10" aria-label="Suivant">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div id="lightbox-content" class="max-w-5xl max-h-[90vh] w-full mx-4 flex items-center justify-center"></div>
+    <p id="lightbox-caption" class="absolute bottom-6 left-0 right-0 text-center text-white/80 px-4"></p>
+  </div>
+
+  <footer class="bg-gray-900 border-t border-white/5 py-12">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      <p id="copyright">© 2025 Club de Football. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadContent();
+      initSite();
+      renderGallery();
+    });
+  </script>
+</body>
+</html>

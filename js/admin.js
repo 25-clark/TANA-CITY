@@ -1,0 +1,796 @@
+// Admin panel logic
+// Mot de passe local (si Supabase non configuré) :
+const LOCAL_ADMIN_PASSWORD = "L0c4l@dmin";
+
+let content = null;
+
+// Indicateur mode
+document.addEventListener("DOMContentLoaded", async () => {
+  const modeEl = document.getElementById("login-mode");
+  if (modeEl) {
+    modeEl.textContent = isSupabaseConfigured()
+      ? "Mode cloud (Supabase) — les changements sont visibles par tous"
+      : "Mode local — configure Supabase (js/config.js) pour un partage global";
+  }
+  // Session Supabase existante ?
+  const client = getSupabase();
+  if (client) {
+    const { data } = await client.auth.getSession();
+    if (data?.session) {
+      await loadContent(true);
+      content = getContent();
+      showAdmin();
+      return;
+    }
+  } else if (sessionStorage.getItem(ADMIN_PASS_KEY) === "ok") {
+    await loadContent(true);
+    content = getContent();
+    showAdmin();
+  }
+});
+
+document.getElementById("login-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("admin-email")?.value?.trim() || "";
+  const pass = document.getElementById("password").value;
+  const errEl = document.getElementById("login-error");
+  if (errEl) {
+    errEl.classList.add("hidden");
+    errEl.textContent = "";
+  }
+
+  const client = getSupabase();
+  if (client) {
+    if (!email) {
+      if (errEl) {
+        errEl.textContent = "Email requis (compte créé dans Supabase Auth)";
+        errEl.classList.remove("hidden");
+      }
+      return;
+    }
+    const { error } = await client.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      if (errEl) {
+        errEl.textContent = error.message || "Identifiants incorrects";
+        errEl.classList.remove("hidden");
+      }
+      return;
+    }
+    await loadContent(true);
+    content = getContent();
+    showAdmin();
+    return;
+  }
+
+  // Mode local
+  if (pass === LOCAL_ADMIN_PASSWORD) {
+    sessionStorage.setItem(ADMIN_PASS_KEY, "ok");
+    await loadContent(true);
+    content = getContent();
+    showAdmin();
+  } else {
+    if (errEl) {
+      errEl.textContent = "Mot de passe incorrect";
+      errEl.classList.remove("hidden");
+    } else {
+      alert("Mot de passe incorrect");
+    }
+  }
+});
+
+document.getElementById("btn-logout")?.addEventListener("click", async () => {
+  sessionStorage.removeItem(ADMIN_PASS_KEY);
+  const client = getSupabase();
+  if (client) await client.auth.signOut();
+  location.reload();
+});
+
+function showAdmin() {
+  if (!content) content = getContent();
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("admin-panel").classList.remove("hidden");
+  applyTheme(content);
+  document.getElementById("admin-site-name").textContent = content.site.name;
+  populateForm();
+  setupTabs();
+  setupEditors();
+}
+
+function setupTabs() {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach((b) => {
+        b.classList.remove("active", "bg-primary", "text-white");
+        b.classList.add("bg-white/5");
+      });
+      btn.classList.add("active", "bg-primary", "text-white");
+      btn.classList.remove("bg-white/5");
+      document.querySelectorAll(".tab-content").forEach((c) => c.classList.add("hidden"));
+      document.getElementById("tab-" + btn.dataset.tab)?.classList.remove("hidden");
+    });
+  });
+}
+
+function populateForm() {
+  document.getElementById("site-name-input").value = content.site.name || "";
+  document.getElementById("site-logo-input").value = content.site.logo || "";
+  document.getElementById("primary-color").value = content.site.primaryColor || "#16a34a";
+  document.getElementById("accent-color").value = content.site.accentColor || "#22c55e";
+  document.getElementById("footer-text-input").value = content.footer?.text || "";
+  document.getElementById("cta-title-input").value = content.cta?.title || "";
+  document.getElementById("cta-text-input").value = content.cta?.text || "";
+
+  document.getElementById("hero-subtitle").value = content.hero?.subtitle || "";
+  document.getElementById("hero-title").value = content.hero?.title || "";
+  document.getElementById("hero-desc").value = content.hero?.description || "";
+  document.getElementById("hero-image").value = content.hero?.image || "";
+  document.getElementById("about-title").value = content.about?.title || "";
+  document.getElementById("about-text").value = content.about?.text || "";
+  document.getElementById("about-image").value = content.about?.image || "";
+
+  document.getElementById("team-title").value = content.team?.title || "";
+  document.getElementById("team-desc").value = content.team?.description || "";
+
+  document.getElementById("contact-email").value = content.contact?.email || "";
+  document.getElementById("contact-phone").value = content.contact?.phone || "";
+  document.getElementById("contact-address").value = content.contact?.address || "";
+  document.getElementById("contact-hours").value = content.contact?.hours || "";
+
+  renderStatsEditor();
+  renderPlayersEditor();
+  renderNewsEditor();
+  renderGalleryEditor();
+}
+
+function setupEditors() {
+  document.getElementById("logo-file")?.addEventListener("change", (e) => {
+    fileToWebpOrBase64(e.target.files[0], (url) => {
+      document.getElementById("site-logo-input").value = url;
+    });
+  });
+  document.getElementById("hero-image-file")?.addEventListener("change", (e) => {
+    fileToWebpOrBase64(e.target.files[0], (url) => {
+      document.getElementById("hero-image").value = url;
+    });
+  });
+  document.getElementById("about-image-file")?.addEventListener("change", (e) => {
+    fileToWebpOrBase64(e.target.files[0], (url) => {
+      document.getElementById("about-image").value = url;
+    });
+  });
+
+              document.getElementById("gallery-file-input")?.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      fileToWebpOrBase64(file, (url) => {
+        content.gallery = content.gallery || [];
+        content.gallery.push({
+          id: Date.now() + Math.random(),
+          type: "image",
+          src: url,
+          title: file.name.replace(/\.[^.]+$/, ""),
+          description: "",
+        });
+        renderGalleryEditor();
+      }, 1200);
+    });
+    e.target.value = "";
+  });
+
+  document.getElementById("btn-save")?.addEventListener("click", saveAll);
+  document.getElementById("btn-export")?.addEventListener("click", () => {
+    collectFormToContent();
+    const blob = new Blob([JSON.stringify(content, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "club-content.json";
+    a.click();
+  });
+  document.getElementById("import-json")?.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        content = mergeContent(JSON.parse(reader.result));
+        await saveContent(content);
+        populateForm();
+        alert("Import réussi !");
+      } catch {
+        alert("Fichier JSON invalide");
+      }
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById("btn-reset")?.addEventListener("click", async () => {
+    if (confirm("Réinitialiser tout le contenu aux valeurs par défaut ?")) {
+      content = await resetContent();
+      populateForm();
+      alert("Réinitialisé et enregistré.");
+    }
+  });
+}
+
+function fileToWebpOrBase64(file, cb, maxWidth = 1600) {
+  if (!file || !file.type.startsWith("image/")) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    let w = img.width;
+    let h = img.height;
+    if (w > maxWidth) {
+      h = (h * maxWidth) / w;
+      w = maxWidth;
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+    let dataUrl;
+    try {
+      dataUrl = canvas.toDataURL("image/webp", 0.82);
+      if (!dataUrl.startsWith("data:image/webp")) {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      }
+    } catch {
+      dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    }
+    URL.revokeObjectURL(url);
+    cb(dataUrl);
+  };
+  img.src = url;
+}
+
+function renderStatsEditor() {
+  const el = document.getElementById("stats-editor");
+  if (!el) return;
+  el.innerHTML = (content.stats || [])
+    .map(
+      (s, i) => `
+    <div class="flex gap-2 items-center">
+      <input type="text" class="admin-input flex-1" data-stat-label="${i}" value="${escapeAttr(s.label)}" placeholder="Label">
+      <input type="text" class="admin-input w-24" data-stat-value="${i}" value="${escapeAttr(s.value)}" placeholder="Valeur">
+      <button type="button" class="text-red-400 hover:text-red-300 px-2" onclick="removeStat(${i})">✕</button>
+    </div>`
+    )
+    .join("");
+}
+
+function removeStat(i) {
+  content.stats.splice(i, 1);
+  renderStatsEditor();
+}
+
+function renderPlayersEditor() {
+  const el = document.getElementById("players-editor");
+  if (!el) return;
+  el.innerHTML = (content.team?.players || [])
+    .map(
+      (p, i) => `
+    <div class="border border-white/10 rounded-xl p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-400">#${i + 1}</span>
+        <button type="button" class="text-red-400 text-sm" onclick="removePlayer(${i})">Supprimer</button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div><label class="admin-label">Nom</label><input class="admin-input" data-player-name="${i}" value="${escapeAttr(p.name)}"></div>
+        <div><label class="admin-label">Rôle / Poste</label><input class="admin-input" data-player-role="${i}" value="${escapeAttr(p.role)}"></div>
+        <div><label class="admin-label">Numéro</label><input class="admin-input" data-player-number="${i}" value="${escapeAttr(p.number || "")}"></div>
+        <div><label class="admin-label">Photo (URL)</label><input class="admin-input" data-player-photo="${i}" value="${escapeAttr(p.photo || "")}"></div>
+        <div class="md:col-span-2"><label class="admin-label">Bio</label><input class="admin-input" data-player-bio="${i}" value="${escapeAttr(p.bio || "")}"></div>
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+function removePlayer(i) {
+  content.team.players.splice(i, 1);
+  renderPlayersEditor();
+}
+
+function renderNewsEditor() {
+  const el = document.getElementById("news-editor");
+  if (!el) return;
+  el.innerHTML = (content.news || [])
+    .map(
+      (n, i) => `
+    <div class="border border-white/10 rounded-xl p-4 space-y-3">
+      <div class="flex justify-between">
+        <span class="text-sm text-gray-400">Actualité #${i + 1}</span>
+        <button type="button" class="text-red-400 text-sm" onclick="removeNews(${i})">Supprimer</button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="md:col-span-2"><label class="admin-label">Titre</label><input class="admin-input" data-news-title="${i}" value="${escapeAttr(n.title)}"></div>
+        <div><label class="admin-label">Date</label><input type="date" class="admin-input" data-news-date="${i}" value="${n.date || ""}"></div>
+        <div><label class="admin-label">Image URL</label><input class="admin-input" data-news-image="${i}" value="${escapeAttr(n.image || "")}"></div>
+        <div class="md:col-span-2"><label class="admin-label">Extrait</label><textarea class="admin-input" rows="2" data-news-excerpt="${i}">${escapeHtml(n.excerpt || "")}</textarea></div>
+        <div class="md:col-span-2"><label class="admin-label">Contenu complet</label><textarea class="admin-input" rows="4" data-news-content="${i}">${escapeHtml(n.content || "")}</textarea></div>
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+function removeNews(i) {
+  content.news.splice(i, 1);
+  renderNewsEditor();
+}
+
+function renderGalleryEditor() {
+  const el = document.getElementById("gallery-editor");
+  if (!el) return;
+  el.innerHTML = (content.gallery || [])
+    .map(
+      (g, i) => `
+    <div class="border border-white/10 rounded-xl p-4 flex flex-col md:flex-row gap-4">
+      <div class="w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-800">
+        ${
+          g.type === "video"
+            ? `<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">VIDÉO</div>`
+            : g.src
+            ? `<img src="${g.src}" class="w-full h-full object-cover" alt="">`
+            : `<div class="w-full h-full flex items-center justify-center text-xs text-gray-500">Pas d'image</div>`
+        }
+      </div>
+      <div class="flex-1 space-y-2">
+        <div class="flex justify-between">
+          <span class="text-xs uppercase tracking-wider text-gray-500">${g.type}</span>
+          <button type="button" class="text-red-400 text-sm" onclick="removeGallery(${i})">Supprimer</button>
+        </div>
+        <input class="admin-input text-sm" data-gal-title="${i}" value="${escapeAttr(g.title || "")}" placeholder="Titre">
+        <input class="admin-input text-sm" data-gal-src="${i}" value="${escapeAttr(g.src || "")}" placeholder="URL image ou embed YouTube">
+        <input class="admin-input text-sm" data-gal-desc="${i}" value="${escapeAttr(g.description || "")}" placeholder="Description">
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+function removeGallery(i) {
+  content.gallery.splice(i, 1);
+  renderGalleryEditor();
+}
+
+function collectFormToContent() {
+  content.site.name = document.getElementById("site-name-input").value;
+  content.site.logo = document.getElementById("site-logo-input").value;
+  content.site.primaryColor = document.getElementById("primary-color").value;
+  content.site.accentColor = document.getElementById("accent-color").value;
+  content.footer = content.footer || {};
+  content.footer.text = document.getElementById("footer-text-input").value;
+  content.cta = content.cta || {};
+  content.cta.title = document.getElementById("cta-title-input").value;
+  content.cta.text = document.getElementById("cta-text-input").value;
+
+  content.hero.subtitle = document.getElementById("hero-subtitle").value;
+  content.hero.title = document.getElementById("hero-title").value;
+  content.hero.description = document.getElementById("hero-desc").value;
+  content.hero.image = document.getElementById("hero-image").value;
+  content.about.title = document.getElementById("about-title").value;
+  content.about.text = document.getElementById("about-text").value;
+  content.about.image = document.getElementById("about-image").value;
+
+  content.team.title = document.getElementById("team-title").value;
+  content.team.description = document.getElementById("team-desc").value;
+
+  content.contact.email = document.getElementById("contact-email").value;
+  content.contact.phone = document.getElementById("contact-phone").value;
+  content.contact.address = document.getElementById("contact-address").value;
+  content.contact.hours = document.getElementById("contact-hours").value;
+
+  document.querySelectorAll("[data-stat-label]").forEach((inp) => {
+    const i = +inp.dataset.statLabel;
+    if (content.stats[i]) content.stats[i].label = inp.value;
+  });
+  document.querySelectorAll("[data-stat-value]").forEach((inp) => {
+    const i = +inp.dataset.statValue;
+    if (content.stats[i]) content.stats[i].value = inp.value;
+  });
+
+  document.querySelectorAll("[data-player-name]").forEach((inp) => {
+    const i = +inp.dataset.playerName;
+    if (content.team.players[i]) content.team.players[i].name = inp.value;
+  });
+  document.querySelectorAll("[data-player-role]").forEach((inp) => {
+    const i = +inp.dataset.playerRole;
+    if (content.team.players[i]) content.team.players[i].role = inp.value;
+  });
+  document.querySelectorAll("[data-player-number]").forEach((inp) => {
+    const i = +inp.dataset.playerNumber;
+    if (content.team.players[i]) content.team.players[i].number = inp.value;
+  });
+  document.querySelectorAll("[data-player-photo]").forEach((inp) => {
+    const i = +inp.dataset.playerPhoto;
+    if (content.team.players[i]) content.team.players[i].photo = inp.value;
+  });
+  document.querySelectorAll("[data-player-bio]").forEach((inp) => {
+    const i = +inp.dataset.playerBio;
+    if (content.team.players[i]) content.team.players[i].bio = inp.value;
+  });
+
+  document.querySelectorAll("[data-news-title]").forEach((inp) => {
+    const i = +inp.dataset.newsTitle;
+    if (content.news[i]) content.news[i].title = inp.value;
+  });
+  document.querySelectorAll("[data-news-date]").forEach((inp) => {
+    const i = +inp.dataset.newsDate;
+    if (content.news[i]) content.news[i].date = inp.value;
+  });
+  document.querySelectorAll("[data-news-image]").forEach((inp) => {
+    const i = +inp.dataset.newsImage;
+    if (content.news[i]) content.news[i].image = inp.value;
+  });
+  document.querySelectorAll("[data-news-excerpt]").forEach((inp) => {
+    const i = +inp.dataset.newsExcerpt;
+    if (content.news[i]) content.news[i].excerpt = inp.value;
+  });
+  document.querySelectorAll("[data-news-content]").forEach((inp) => {
+    const i = +inp.dataset.newsContent;
+    if (content.news[i]) content.news[i].content = inp.value;
+  });
+
+  document.querySelectorAll("[data-gal-title]").forEach((inp) => {
+    const i = +inp.dataset.galTitle;
+    if (content.gallery[i]) content.gallery[i].title = inp.value;
+  });
+  document.querySelectorAll("[data-gal-src]").forEach((inp) => {
+    const i = +inp.dataset.galSrc;
+    if (content.gallery[i]) {
+      content.gallery[i].src = inp.value;
+      content.gallery[i].isYoutube = inp.value.includes("youtube") || inp.value.includes("youtu.be");
+    }
+  });
+  document.querySelectorAll("[data-gal-desc]").forEach((inp) => {
+    const i = +inp.dataset.galDesc;
+    if (content.gallery[i]) content.gallery[i].description = inp.value;
+  });
+}
+
+async function saveAll() {
+  collectFormToContent();
+  const ok = await saveContent(content);
+  if (ok) {
+    const status = document.getElementById("save-status");
+    status.classList.remove("hidden");
+    status.textContent = isSupabaseConfigured()
+      ? "✓ Enregistré dans le cloud — visible par tous les visiteurs"
+      : "✓ Enregistré localement (configure Supabase pour partager)";
+    setTimeout(() => status.classList.add("hidden"), 5000);
+    applyTheme(content);
+    document.getElementById("admin-site-name").textContent = content.site.name;
+  }
+}
+
+function escapeAttr(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+function escapeHtml(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+window.removeStat = removeStat;
+window.removePlayer = removePlayer;
+window.removeNews = removeNews;
+window.removeGallery = removeGallery;
+
+// --- Events / Results / Reservations editors ---
+function renderEventsEditor() {
+  const el = document.getElementById("events-editor");
+  if (!el) return;
+  content.events = content.events || [];
+  el.innerHTML = content.events
+    .map(
+      (e, i) => `
+    <div class="border border-white/10 rounded-xl p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-sm text-gray-400">#${i + 1} · ${e.type || ""}</span>
+        <button type="button" class="text-red-400 text-sm" onclick="removeEvent(${i})">Supprimer</button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="md:col-span-2"><label class="admin-label">Titre</label><input class="admin-input" data-ev-title="${i}" value="${escapeAttr(e.title || "")}"></div>
+        <div><label class="admin-label">Type</label>
+          <select class="admin-input" data-ev-type="${i}">
+            <option value="match" ${e.type === "match" ? "selected" : ""}>Match</option>
+            <option value="entrainement" ${e.type === "entrainement" ? "selected" : ""}>Entraînement</option>
+            <option value="tournoi" ${e.type === "tournoi" ? "selected" : ""}>Tournoi</option>
+            <option value="reunion" ${e.type === "reunion" ? "selected" : ""}>Réunion</option>
+            <option value="autre" ${e.type === "autre" ? "selected" : ""}>Autre</option>
+          </select>
+        </div>
+        <div><label class="admin-label">Catégorie</label><input class="admin-input" data-ev-cat="${i}" value="${escapeAttr(e.category || "")}" placeholder="Senior, U15..."></div>
+        <div><label class="admin-label">Date</label><input type="date" class="admin-input" data-ev-date="${i}" value="${e.date || ""}"></div>
+        <div class="flex gap-2">
+          <div class="flex-1"><label class="admin-label">Début</label><input type="time" class="admin-input" data-ev-time="${i}" value="${e.time || ""}"></div>
+          <div class="flex-1"><label class="admin-label">Fin</label><input type="time" class="admin-input" data-ev-end="${i}" value="${e.endTime || ""}"></div>
+        </div>
+        <div class="md:col-span-2"><label class="admin-label">Lieu</label><input class="admin-input" data-ev-loc="${i}" value="${escapeAttr(e.location || "")}"></div>
+        <div class="md:col-span-2"><label class="admin-label">Description</label><textarea class="admin-input" rows="2" data-ev-desc="${i}">${escapeHtml(e.description || "")}</textarea></div>
+        <div><label class="admin-label">Adversaire (matchs)</label><input class="admin-input" data-ev-opp="${i}" value="${escapeAttr(e.opponent || "")}"></div>
+        <div class="flex items-center gap-4 pt-6">
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-ev-home="${i}" ${e.home ? "checked" : ""}> Domicile</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-ev-book="${i}" ${e.bookable ? "checked" : ""}> Réservable</label>
+        </div>
+        <div><label class="admin-label">Capacité (si réservable)</label><input type="number" class="admin-input" data-ev-cap="${i}" value="${e.capacity || ""}" min="0"></div>
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+function removeEvent(i) {
+  content.events.splice(i, 1);
+  renderEventsEditor();
+}
+window.removeEvent = removeEvent;
+
+function renderResultsEditor() {
+  const el = document.getElementById("results-editor");
+  if (!el) return;
+  content.results = content.results || [];
+  el.innerHTML = content.results
+    .map(
+      (r, i) => `
+    <div class="border border-white/10 rounded-xl p-4 grid md:grid-cols-3 gap-3 items-end">
+      <div><label class="admin-label">Date</label><input type="date" class="admin-input" data-res-date="${i}" value="${r.date || ""}"></div>
+      <div><label class="admin-label">Adversaire</label><input class="admin-input" data-res-opp="${i}" value="${escapeAttr(r.opponent || "")}"></div>
+      <div><label class="admin-label">Compétition</label><input class="admin-input" data-res-comp="${i}" value="${escapeAttr(r.competition || "")}"></div>
+      <div><label class="admin-label">Score nous</label><input type="number" class="admin-input" data-res-home="${i}" value="${r.scoreHome ?? 0}"></div>
+      <div><label class="admin-label">Score eux</label><input type="number" class="admin-input" data-res-away="${i}" value="${r.scoreAway ?? 0}"></div>
+      <div class="flex items-center justify-between gap-2">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" data-res-is-home="${i}" ${r.home ? "checked" : ""}> À domicile</label>
+        <button type="button" class="text-red-400 text-sm" onclick="removeResult(${i})">✕</button>
+      </div>
+    </div>`
+    )
+    .join("");
+}
+
+function removeResult(i) {
+  content.results.splice(i, 1);
+  renderResultsEditor();
+}
+window.removeResult = removeResult;
+
+function renderReservationsList() {
+  const el = document.getElementById("reservations-list");
+  if (!el) return;
+  content.reservations = content.reservations || [];
+  if (!content.reservations.length) {
+    el.innerHTML = '<p class="text-gray-500 text-sm">Aucune réservation pour le moment.</p>';
+    return;
+  }
+  const eventsById = Object.fromEntries((content.events || []).map((e) => [e.id, e]));
+  el.innerHTML = content.reservations
+    .slice()
+    .reverse()
+    .map((r) => {
+      const ev = eventsById[r.eventId];
+      const statusColor =
+        r.status === "confirmed" ? "text-green-400" : r.status === "cancelled" ? "text-red-400" : "text-amber-400";
+      return `
+      <div class="border border-white/10 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <p class="font-medium">${escapeAttr(r.name)} · ${r.seats || 1} place(s)</p>
+          <p class="text-sm text-gray-400">${escapeAttr(r.email)} ${r.phone ? "· " + escapeAttr(r.phone) : ""}</p>
+          <p class="text-sm text-gray-500 mt-1">${ev ? ev.title + " — " + (ev.date || "") : "Événement #" + r.eventId}</p>
+          ${r.message ? `<p class="text-xs text-gray-500 mt-1">« ${escapeAttr(r.message)} »</p>` : ""}
+          <p class="text-xs ${statusColor} mt-1 uppercase">${r.status || "pending"}</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400" onclick="setReservationStatus(${r.id}, 'confirmed')">Confirmer</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400" onclick="setReservationStatus(${r.id}, 'cancelled')">Annuler</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-white/10" onclick="deleteReservation(${r.id})">Suppr.</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+async function setReservationStatus(id, status) {
+  try {
+    await updateReservationStatus(id, status);
+    const r = (content.reservations || []).find((x) => x.id === id);
+    if (r) r.status = status;
+    renderReservationsList();
+  } catch (e) {
+    alert("Erreur: " + (e.message || e));
+  }
+}
+async function deleteReservation(id) {
+  try {
+    await deleteReservationDb(id);
+    content.reservations = (content.reservations || []).filter((x) => x.id !== id);
+    renderReservationsList();
+  } catch (e) {
+    alert("Erreur: " + (e.message || e));
+  }
+}
+window.setReservationStatus = setReservationStatus;
+window.deleteReservation = deleteReservation;
+
+
+// --- Robust event binding (delegation) so buttons always work ---
+function bindAdminActions() {
+  // Already bound?
+  if (window.__adminBound) return;
+  window.__adminBound = true;
+
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("button, label, [data-action]");
+    if (!t) return;
+    const id = t.id;
+
+    if (id === "add-stat") {
+      content.stats = content.stats || [];
+      content.stats.push({ label: "Nouveau", value: "0" });
+      renderStatsEditor();
+    }
+    if (id === "add-player") {
+      content.team.players = content.team.players || [];
+      content.team.players.push({ name: "Nouveau joueur", role: "Poste", number: "", photo: "", bio: "" });
+      renderPlayersEditor();
+    }
+    if (id === "add-news") {
+      content.news = content.news || [];
+      content.news.unshift({
+        id: Date.now(),
+        title: "Nouvelle actualité",
+        excerpt: "",
+        date: new Date().toISOString().slice(0, 10),
+        image: "",
+        content: "",
+      });
+      renderNewsEditor();
+    }
+    if (id === "add-gallery-image") {
+      content.gallery = content.gallery || [];
+      content.gallery.push({ id: Date.now(), type: "image", src: "", title: "", description: "" });
+      renderGalleryEditor();
+    }
+    if (id === "add-gallery-video") {
+      content.gallery = content.gallery || [];
+      content.gallery.push({
+        id: Date.now(),
+        type: "video",
+        src: "https://www.youtube.com/embed/VIDEO_ID",
+        title: "Vidéo",
+        description: "",
+        isYoutube: true,
+      });
+      renderGalleryEditor();
+    }
+    if (id === "add-gallery-upload") {
+      document.getElementById("gallery-file-input")?.click();
+    }
+    if (id === "add-event") {
+      content.events = content.events || [];
+      content.events.push({
+        id: Date.now(),
+        title: "Nouvel événement",
+        type: "entrainement",
+        date: new Date().toISOString().slice(0, 10),
+        time: "19:00",
+        endTime: "21:00",
+        location: "",
+        description: "",
+        bookable: false,
+        capacity: 20,
+        category: "Senior",
+      });
+      renderEventsEditor();
+    }
+    if (id === "add-result") {
+      content.results = content.results || [];
+      content.results.unshift({
+        id: Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        opponent: "",
+        scoreHome: 0,
+        scoreAway: 0,
+        home: true,
+        competition: "Championnat",
+      });
+      renderResultsEditor();
+    }
+  });
+}
+
+// Patch populate / collect without breaking setup
+(function patchAdmin() {
+  const origPopulate = populateForm;
+  populateForm = function () {
+    origPopulate();
+    renderEventsEditor();
+    renderResultsEditor();
+    renderReservationsList();
+  };
+
+  const origCollect = collectFormToContent;
+  collectFormToContent = function () {
+    origCollect();
+    document.querySelectorAll("[data-ev-title]").forEach((inp) => {
+      const i = +inp.dataset.evTitle;
+      if (content.events[i]) content.events[i].title = inp.value;
+    });
+    document.querySelectorAll("[data-ev-type]").forEach((inp) => {
+      const i = +inp.dataset.evType;
+      if (content.events[i]) content.events[i].type = inp.value;
+    });
+    document.querySelectorAll("[data-ev-cat]").forEach((inp) => {
+      const i = +inp.dataset.evCat;
+      if (content.events[i]) content.events[i].category = inp.value;
+    });
+    document.querySelectorAll("[data-ev-date]").forEach((inp) => {
+      const i = +inp.dataset.evDate;
+      if (content.events[i]) content.events[i].date = inp.value;
+    });
+    document.querySelectorAll("[data-ev-time]").forEach((inp) => {
+      const i = +inp.dataset.evTime;
+      if (content.events[i]) content.events[i].time = inp.value;
+    });
+    document.querySelectorAll("[data-ev-end]").forEach((inp) => {
+      const i = +inp.dataset.evEnd;
+      if (content.events[i]) content.events[i].endTime = inp.value;
+    });
+    document.querySelectorAll("[data-ev-loc]").forEach((inp) => {
+      const i = +inp.dataset.evLoc;
+      if (content.events[i]) content.events[i].location = inp.value;
+    });
+    document.querySelectorAll("[data-ev-desc]").forEach((inp) => {
+      const i = +inp.dataset.evDesc;
+      if (content.events[i]) content.events[i].description = inp.value;
+    });
+    document.querySelectorAll("[data-ev-opp]").forEach((inp) => {
+      const i = +inp.dataset.evOpp;
+      if (content.events[i]) content.events[i].opponent = inp.value;
+    });
+    document.querySelectorAll("[data-ev-home]").forEach((inp) => {
+      const i = +inp.dataset.evHome;
+      if (content.events[i]) content.events[i].home = inp.checked;
+    });
+    document.querySelectorAll("[data-ev-book]").forEach((inp) => {
+      const i = +inp.dataset.evBook;
+      if (content.events[i]) content.events[i].bookable = inp.checked;
+    });
+    document.querySelectorAll("[data-ev-cap]").forEach((inp) => {
+      const i = +inp.dataset.evCap;
+      if (content.events[i]) content.events[i].capacity = inp.value ? +inp.value : null;
+    });
+    document.querySelectorAll("[data-res-date]").forEach((inp) => {
+      const i = +inp.dataset.resDate;
+      if (content.results[i]) content.results[i].date = inp.value;
+    });
+    document.querySelectorAll("[data-res-opp]").forEach((inp) => {
+      const i = +inp.dataset.resOpp;
+      if (content.results[i]) content.results[i].opponent = inp.value;
+    });
+    document.querySelectorAll("[data-res-comp]").forEach((inp) => {
+      const i = +inp.dataset.resComp;
+      if (content.results[i]) content.results[i].competition = inp.value;
+    });
+    document.querySelectorAll("[data-res-home]").forEach((inp) => {
+      const i = +inp.dataset.resHome;
+      if (content.results[i]) content.results[i].scoreHome = +inp.value;
+    });
+    document.querySelectorAll("[data-res-away]").forEach((inp) => {
+      const i = +inp.dataset.resAway;
+      if (content.results[i]) content.results[i].scoreAway = +inp.value;
+    });
+    document.querySelectorAll("[data-res-is-home]").forEach((inp) => {
+      const i = +inp.dataset.resIsHome;
+      if (content.results[i]) content.results[i].home = inp.checked;
+    });
+  };
+})();
+
+// Always bind once
+bindAdminActions();
+

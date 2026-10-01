@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programme - Club de Football</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: 'var(--color-primary)', secondary: 'var(--color-secondary)', accent: 'var(--color-accent)' },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Oswald', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-950 text-white font-sans antialiased">
+  <header id="header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-gray-950/90 backdrop-blur border-b border-white/5">
+    <nav class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div id="logo-container" class="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-white/30 shadow">
+          <img id="site-logo" src="assets/logo.png" alt="TANA CITY" class="w-full h-full object-cover">
+          <span id="logo-fallback" class="text-2xl font-display font-bold text-white hidden">TC</span>
+        </div>
+        <span id="site-name" class="text-xl font-display font-bold tracking-wide group-hover:text-primary transition-colors">Club FC</span>
+      </a>
+      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-white/10" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <ul id="nav-menu" class="hidden md:flex items-center gap-6 font-medium text-sm lg:text-base">
+        <li><a href="index.html" class="nav-link hover:text-primary transition-colors">Accueil</a></li>
+        <li><a href="equipe.html" class="nav-link hover:text-primary transition-colors">Équipe</a></li>
+        <li><a href="programme.html" class="nav-link active hover:text-primary transition-colors">Programme</a></li>
+        <li><a href="galerie.html" class="nav-link hover:text-primary transition-colors">Galerie</a></li>
+        <li><a href="actualites.html" class="nav-link hover:text-primary transition-colors">Actualités</a></li>
+        <li><a href="contact.html" class="nav-link hover:text-primary transition-colors">Contact</a></li>
+      </ul>
+    </nav>
+    <div id="mobile-menu" class="hidden md:hidden bg-gray-900/95 backdrop-blur border-t border-white/10">
+      <ul class="flex flex-col p-4 gap-2">
+        <li><a href="index.html" class="block py-2 px-4 rounded hover:bg-white/10">Accueil</a></li>
+        <li><a href="equipe.html" class="block py-2 px-4 rounded hover:bg-white/10">Équipe</a></li>
+        <li><a href="programme.html" class="block py-2 px-4 rounded hover:bg-white/10">Programme</a></li>
+        <li><a href="galerie.html" class="block py-2 px-4 rounded hover:bg-white/10">Galerie</a></li>
+        <li><a href="actualites.html" class="block py-2 px-4 rounded hover:bg-white/10">Actualités</a></li>
+        <li><a href="contact.html" class="block py-2 px-4 rounded hover:bg-white/10">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="pt-28 pb-20">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-10">
+        <h1 class="font-display text-4xl md:text-5xl font-bold mb-4">Programme</h1>
+        <p class="text-gray-400 max-w-xl mx-auto">Entraînements, matchs et événements du club. Réservez votre place quand c’est possible.</p>
+      </div>
+
+      <!-- Filters -->
+      <div class="flex flex-wrap gap-2 justify-center mb-10">
+        <button class="filter-btn active px-4 py-2 rounded-full text-sm font-medium bg-primary text-white" data-filter="all">Tout</button>
+        <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white/10 hover:bg-white/20" data-filter="match">Matchs</button>
+        <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white/10 hover:bg-white/20" data-filter="entrainement">Entraînements</button>
+        <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white/10 hover:bg-white/20" data-filter="tournoi">Tournois</button>
+        <button class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white/10 hover:bg-white/20" data-filter="reunion">Réunions</button>
+      </div>
+
+      <!-- Upcoming events -->
+      <div id="events-list" class="space-y-4 max-w-3xl mx-auto">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Results section -->
+      <div class="mt-16 max-w-3xl mx-auto">
+        <h2 class="font-display text-2xl md:text-3xl font-bold mb-6 text-center">Derniers résultats</h2>
+        <div id="results-list" class="space-y-3">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Reservation Modal -->
+  <div id="reserve-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div class="bg-gray-900 border border-white/10 rounded-2xl max-w-md w-full p-6 relative">
+      <button id="reserve-close" class="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10" aria-label="Fermer">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <h3 class="font-display text-xl font-bold mb-1">Réserver une place</h3>
+      <p id="reserve-event-title" class="text-primary text-sm mb-6"></p>
+      <form id="reserve-form" class="space-y-4">
+        <input type="hidden" id="reserve-event-id">
+        <div>
+          <label class="admin-label">Nom complet</label>
+          <input type="text" id="reserve-name" required class="admin-input" placeholder="Votre nom">
+        </div>
+        <div>
+          <label class="admin-label">Email</label>
+          <input type="email" id="reserve-email" required class="admin-input" placeholder="vous@email.com">
+        </div>
+        <div>
+          <label class="admin-label">Téléphone</label>
+          <input type="tel" id="reserve-phone" class="admin-input" placeholder="06...">
+        </div>
+        <div>
+          <label class="admin-label">Nombre de places</label>
+          <input type="number" id="reserve-seats" min="1" max="10" value="1" class="admin-input">
+        </div>
+        <div>
+          <label class="admin-label">Message (optionnel)</label>
+          <textarea id="reserve-message" rows="2" class="admin-input resize-none" placeholder="Précisions..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold">Confirmer la réservation</button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="bg-gray-900 border-t border-white/5 py-12">
+    <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+      <p id="copyright">© 2025 Club de Football. Tous droits réservés.</p>
+    </div>
+  </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadContent();
+      initSite();
+      renderProgramme();
+    });
+  </script>
+</body>
+</html>

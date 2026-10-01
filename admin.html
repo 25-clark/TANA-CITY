@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administration - Club de Football</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="shortcut icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: 'var(--color-primary)', secondary: 'var(--color-secondary)', accent: 'var(--color-accent)' },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Oswald', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-950 text-white font-sans antialiased min-h-screen">
+  <!-- Login -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl p-8 shadow-2xl">
+      <h1 class="font-display text-2xl font-bold text-center mb-2">Administration</h1>
+      
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="admin-label">Email admin</label>
+          <input type="email" id="admin-email" class="admin-input" placeholder="admin@tanacity.mg" required>
+        </div>
+        <div>
+          <label class="admin-label">Mot de passe</label>
+          <input type="password" id="password" class="admin-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold">Se connecter</button>
+      </form>
+      <p id="login-error" class="text-red-400 text-sm text-center mt-3 hidden"></p>
+      <p id="login-mode" class="text-gray-500 text-xs text-center mt-4"></p>
+      <p class="text-center mt-6"><a href="index.html" class="text-sm text-gray-400 hover:text-primary">← Retour au site</a></p>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="admin-panel" class="hidden">
+    <header class="sticky top-0 z-40 bg-gray-900/95 backdrop-blur border-b border-white/10">
+      <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+        <h1 class="font-display text-xl font-bold">Admin — <span id="admin-site-name">Club</span></h1>
+        <div class="flex items-center gap-3">
+          <a href="index.html" target="_blank" class="text-sm text-gray-400 hover:text-white">Voir le site ↗</a>
+          <button id="btn-logout" class="text-sm px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">Déconnexion</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 admin-panel">
+      <!-- Tabs -->
+      <div class="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
+        <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white" data-tab="general">Général</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="hero">Hero / Accueil</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="team">Équipe</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="news">Actualités</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="gallery">Galerie</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="events">Programme</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="results">Résultats</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="reservations">Réservations</button>
+        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/5 hover:bg-white/10" data-tab="contact">Contact</button>
+      </div>
+
+      <!-- GENERAL -->
+      <div id="tab-general" class="tab-content">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Identité du club</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="admin-label">Nom du club</label>
+              <input type="text" id="site-name-input" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Logo (URL ou coller une image)</label>
+              <input type="text" id="site-logo-input" class="admin-input" placeholder="https://... ou laissez vide">
+              <input type="file" id="logo-file" accept="image/*" class="mt-2 text-sm text-gray-400">
+            </div>
+            <div>
+              <label class="admin-label">Couleur principale</label>
+              <input type="color" id="primary-color" class="h-10 w-full rounded cursor-pointer">
+            </div>
+            <div>
+              <label class="admin-label">Couleur accent</label>
+              <input type="color" id="accent-color" class="h-10 w-full rounded cursor-pointer">
+            </div>
+          </div>
+        </div>
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Statistiques (accueil)</h2>
+          <div id="stats-editor" class="space-y-3"></div>
+          <button type="button" id="add-stat" class="mt-3 text-sm text-primary hover:underline">+ Ajouter une stat</button>
+        </div>
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Pied de page & CTA</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="admin-label">Texte footer</label>
+              <input type="text" id="footer-text-input" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Titre CTA</label>
+              <input type="text" id="cta-title-input" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Texte CTA</label>
+              <textarea id="cta-text-input" class="admin-input" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO -->
+      <div id="tab-hero" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Section Hero</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="admin-label">Sous-titre</label>
+              <input type="text" id="hero-subtitle" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Titre principal</label>
+              <input type="text" id="hero-title" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Description</label>
+              <textarea id="hero-desc" class="admin-input" rows="3"></textarea>
+            </div>
+            <div>
+              <label class="admin-label">Image de fond (URL WebP recommandée)</label>
+              <input type="text" id="hero-image" class="admin-input" placeholder="https://...webp">
+              <input type="file" id="hero-image-file" accept="image/*" class="mt-2 text-sm text-gray-400">
+            </div>
+          </div>
+        </div>
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Section À propos</h2>
+          <div class="space-y-4">
+            <div>
+              <label class="admin-label">Titre</label>
+              <input type="text" id="about-title" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Texte</label>
+              <textarea id="about-text" class="admin-input" rows="4"></textarea>
+            </div>
+            <div>
+              <label class="admin-label">Image</label>
+              <input type="text" id="about-image" class="admin-input">
+              <input type="file" id="about-image-file" accept="image/*" class="mt-2 text-sm text-gray-400">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div id="tab-team" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Page Équipe</h2>
+          <div class="space-y-4 mb-6">
+            <div>
+              <label class="admin-label">Titre de page</label>
+              <input type="text" id="team-title" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Description</label>
+              <textarea id="team-desc" class="admin-input" rows="2"></textarea>
+            </div>
+          </div>
+          <h3 class="font-medium mb-3">Joueurs / Staff</h3>
+          <div id="players-editor" class="space-y-4"></div>
+          <button type="button" id="add-player" class="mt-4 text-sm text-primary hover:underline">+ Ajouter un joueur</button>
+        </div>
+      </div>
+
+      <!-- NEWS -->
+      <div id="tab-news" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Actualités</h2>
+          <div id="news-editor" class="space-y-4"></div>
+          <button type="button" id="add-news" class="mt-4 text-sm text-primary hover:underline">+ Ajouter une actualité</button>
+        </div>
+      </div>
+
+      <!-- GALLERY -->
+      <div id="tab-gallery" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Galerie (album + lightbox)</h2>
+          <p class="text-sm text-gray-400 mb-4">Ajoutez des images (URL WebP idéal) ou des vidéos (lien YouTube embed ou fichier vidéo). Cliquez sur une image du site pour l’agrandir.</p>
+          <div id="gallery-editor" class="space-y-4"></div>
+          <div class="flex flex-wrap gap-3 mt-4">
+            <button type="button" id="add-gallery-image" class="text-sm px-4 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30">+ Image (URL)</button>
+            <button type="button" id="add-gallery-upload" class="text-sm px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">+ Upload image</button>
+            <button type="button" id="add-gallery-video" class="text-sm px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">+ Vidéo YouTube</button>
+          </div>
+          <input type="file" id="gallery-file-input" accept="image/*" class="hidden" multiple>
+        </div>
+      </div>
+
+      <!-- EVENTS / PROGRAMME -->
+      <div id="tab-events" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Programme (entraînements, matchs, événements)</h2>
+          <p class="text-sm text-gray-400 mb-4">Cochez « Réservable » pour permettre aux visiteurs de réserver une place.</p>
+          <div id="events-editor" class="space-y-4"></div>
+          <button type="button" id="add-event" class="mt-4 text-sm text-primary hover:underline">+ Ajouter un événement</button>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="tab-results" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Résultats de matchs</h2>
+          <div id="results-editor" class="space-y-4"></div>
+          <button type="button" id="add-result" class="mt-4 text-sm text-primary hover:underline">+ Ajouter un résultat</button>
+        </div>
+      </div>
+
+      <!-- RESERVATIONS -->
+      <div id="tab-reservations" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Réservations reçues</h2>
+          <p class="text-sm text-gray-400 mb-4">Les réservations faites sur le site apparaissent ici. Vous pouvez les confirmer ou les annuler.</p>
+          <div id="reservations-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div id="tab-contact" class="tab-content hidden">
+        <div class="admin-section">
+          <h2 class="font-semibold text-lg mb-4">Coordonnées</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="admin-label">Email</label>
+              <input type="email" id="contact-email" class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Téléphone</label>
+              <input type="text" id="contact-phone" class="admin-input">
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Adresse</label>
+              <input type="text" id="contact-address" class="admin-input">
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Horaires</label>
+              <input type="text" id="contact-hours" class="admin-input">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="sticky bottom-0 bg-gray-950/95 backdrop-blur border-t border-white/10 py-4 mt-8 flex flex-wrap gap-3 justify-between items-center">
+        <div class="flex gap-2">
+          <button id="btn-save" class="btn-primary px-6 py-2.5 rounded-xl font-semibold">Enregistrer les modifications</button>
+          <button id="btn-export" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm">Exporter JSON</button>
+          <label class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-sm cursor-pointer">
+            Importer JSON
+            <input type="file" id="import-json" accept=".json" class="hidden">
+          </label>
+        </div>
+        <button id="btn-reset" class="text-sm text-red-400 hover:text-red-300">Réinitialiser aux valeurs par défaut</button>
+      </div>
+      <p id="save-status" class="text-center text-sm text-green-400 mt-2 hidden">✓ Enregistré ! Rechargez les pages du site pour voir les changements.</p>
+    </div>
+  </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

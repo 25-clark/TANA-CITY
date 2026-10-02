@@ -761,8 +761,8 @@ function bindAdminActions() {
       content.roster = content.roster || [];
       content.roster.push({
         id: Date.now(),
-        firstName: "Nouveau",
-        lastName: "Joueur",
+        firstName: "",
+        lastName: "",
         category: "U13",
         gender: "M",
         birthDate: "",
@@ -777,19 +777,19 @@ function bindAdminActions() {
     }
     if (id === "add-stat") {
       content.stats = content.stats || [];
-      content.stats.push({ label: "Nouveau", value: "0" });
+      content.stats.push({ label: "Indicateur", value: "0" });
       renderStatsEditor();
     }
     if (id === "add-player") {
       content.team.players = content.team.players || [];
-      content.team.players.push({ name: "Nouveau joueur", role: "Poste", number: "", photo: "", bio: "" });
+      content.team.players.push({ name: "Joueur", role: "Poste à définir", number: "", photo: "", bio: "" });
       renderPlayersEditor();
     }
     if (id === "add-news") {
       content.news = content.news || [];
       content.news.unshift({
         id: Date.now(),
-        title: "Nouvelle actualité",
+        title: "Actualité",
         excerpt: "",
         date: new Date().toISOString().slice(0, 10),
         image: "",
@@ -821,7 +821,7 @@ function bindAdminActions() {
       content.events = content.events || [];
       content.events.push({
         id: Date.now(),
-        title: "Nouvel événement",
+        title: "Événement",
         type: "entrainement",
         date: new Date().toISOString().slice(0, 10),
         time: "19:00",

@@ -296,24 +296,28 @@ function renderTeam() {
   if (desc) desc.textContent = content.team.description;
 
   const grid = document.getElementById("players-grid");
-  if (grid && content.team.players) {
-    grid.innerHTML = content.team.players
-      .map(
-        (p) => `
-      <div class="player-card">
-        <div class="aspect-square overflow-hidden relative">
-          <img src="${p.photo}" alt="${p.name}" class="w-full h-full object-cover" loading="lazy">
-          ${p.number ? `<span class="absolute top-3 right-3 w-10 h-10 rounded-full bg-primary flex items-center justify-center font-display font-bold text-lg">${p.number}</span>` : ""}
-        </div>
-        <div class="p-4 text-center">
-          <h3 class="font-semibold text-lg">${p.name}</h3>
-          <p class="text-primary text-sm font-medium">${p.role}</p>
-          ${p.bio ? `<p class="text-gray-400 text-sm mt-2">${p.bio}</p>` : ""}
-        </div>
-      </div>`
-      )
-      .join("");
+  if (!grid) return;
+  const players = content.team.players || [];
+  if (!players.length) {
+    grid.innerHTML = '<p class="text-center text-gray-500 col-span-full py-12">Aucun profil publié pour le moment.</p>';
+    return;
   }
+  grid.innerHTML = players
+    .map(
+      (p) => `
+    <div class="player-card">
+      <div class="aspect-square overflow-hidden relative bg-gray-800">
+        ${p.photo ? `<img src="${p.photo}" alt="${p.name || ""}" class="w-full h-full object-cover" loading="lazy">` : `<div class="w-full h-full flex items-center justify-center text-gray-600 text-sm">Photo</div>`}
+        ${p.number ? `<span class="absolute top-3 right-3 w-10 h-10 rounded-full bg-primary flex items-center justify-center font-display font-bold text-lg">${p.number}</span>` : ""}
+      </div>
+      <div class="p-4 text-center">
+        <h3 class="font-semibold text-lg">${p.name || ""}</h3>
+        <p class="text-primary text-sm font-medium">${p.role || ""}</p>
+        ${p.bio ? `<p class="text-gray-400 text-sm mt-2">${p.bio}</p>` : ""}
+      </div>
+    </div>`
+    )
+    .join("");
 }
 
 // ========== GALERIE ==========
@@ -360,17 +364,21 @@ function renderNews() {
   const list = document.getElementById("news-list");
   if (!list || !content.news) return;
 
+  if (!content.news.length) {
+    list.innerHTML = '<p class="text-center text-gray-500 py-12">Aucune actualité publiée pour le moment.</p>';
+    return;
+  }
   list.innerHTML = content.news
     .map(
       (n) => `
     <article class="news-card flex flex-col md:flex-row overflow-hidden">
-      <div class="md:w-2/5 aspect-video md:aspect-auto overflow-hidden">
-        <img src="${n.image}" alt="${n.title}" class="w-full h-full object-cover" loading="lazy">
+      <div class="md:w-2/5 aspect-video md:aspect-auto overflow-hidden bg-gray-800">
+        ${n.image ? `<img src="${n.image}" alt="${n.title || ""}" class="w-full h-full object-cover" loading="lazy">` : ""}
       </div>
       <div class="p-6 md:w-3/5 flex flex-col justify-center">
         <time class="text-xs text-primary font-medium">${formatDate(n.date)}</time>
-        <h2 class="font-display text-xl md:text-2xl font-bold mt-1 mb-3">${n.title}</h2>
-        <p class="text-gray-300 leading-relaxed">${n.content || n.excerpt}</p>
+        <h2 class="font-display text-xl md:text-2xl font-bold mt-1 mb-3">${n.title || ""}</h2>
+        <p class="text-gray-300 leading-relaxed">${n.content || n.excerpt || ""}</p>
       </div>
     </article>`
     )
@@ -472,7 +480,7 @@ function renderProgramme() {
     list.innerHTML =
       (upcoming.length
         ? upcoming.map((e) => renderCard(e, false)).join("")
-        : '<p class="text-center text-gray-500 py-6">Aucun événement à venir.</p>') +
+        : '<p class="text-center text-gray-500 py-6">Aucun événement planifié pour le moment.</p>') +
       (past.length
         ? '<h3 class="text-sm uppercase tracking-wider text-gray-500 mt-10 mb-4">Événements passés</h3>' +
           past.map((e) => renderCard(e, true)).join("")
@@ -557,7 +565,7 @@ function setupReserveModal() {
     modal.classList.add("hidden");
     modal.classList.remove("flex");
     document.getElementById("reserve-form").reset();
-    alert("Réservation enregistrée ! Le club vous contactera pour confirmation.");
+    alert("Demande enregistrée. Le club vous recontactera si nécessaire.");
     location.reload();
   });
 }
@@ -585,7 +593,7 @@ function renderHomeEventsPreview() {
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
     .slice(0, 3);
   if (!upcoming.length) {
-    container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Aucun événement à venir.</p>';
+    container.innerHTML = '<p class="text-gray-500 text-center col-span-full">Aucun événement planifié pour le moment.</p>';
     return;
   }
   container.innerHTML = upcoming

@@ -60,7 +60,7 @@
     <div class="container mx-auto px-4 max-w-2xl">
       <div class="text-center mb-10">
         <h1 class="font-display text-4xl md:text-5xl font-bold mb-4">Inscription au club</h1>
-        <p class="text-gray-400">Inscrivez votre enfant ou un joueur. Ce n’est pas un compte de connexion : c’est une demande d’adhésion au club.</p>
+        <p class="text-gray-400">Formulaire de demande d’inscription au club (enfant ou joueur). Ce n’est pas une création de compte : le club traite chaque dossier et vous recontacte.</p>
       </div>
 
       <div class="bg-gray-900/60 border border-white/10 rounded-2xl p-6 md:p-8">
@@ -181,7 +181,7 @@
             </div>
           </div>
 
-          <button type="submit" id="ins-submit" class="btn-primary w-full py-3 rounded-xl font-semibold">Envoyer la demande d’inscription</button>
+          <button type="submit" id="ins-submit" class="btn-primary w-full py-3 rounded-xl font-semibold">Envoyer la demande</button>
           <p id="ins-msg" class="text-center text-sm hidden"></p>
         </form>
       </div>
@@ -267,7 +267,7 @@
           msg.className = 'text-center text-sm text-red-400';
           return;
         }
-        msg.textContent = 'Demande envoyée ! Le club vous contactera pour la suite (validation et paiement).';
+        msg.textContent = 'Demande enregistrée. Le club vous recontactera pour confirmer la place et les modalités de cotisation.';
         msg.className = 'text-center text-sm text-green-400';
         e.target.reset();
       });

@@ -19,8 +19,43 @@ const TYPE_COLORS = {
 };
 
 
+
+// SVG icons (inline, responsive-friendly)
+const ICONS = {
+  home: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4"/></svg>',
+  team: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 4a4 4 0 10-8 0"/></svg>',
+  calendar: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"/></svg>',
+  register: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>',
+  gallery: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+  news: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2z"/></svg>',
+  contact: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
+  phone: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.5a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.5 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z"/></svg>',
+  map: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+  clock: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+  pay: '<svg class="icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>',
+};
+
+function decorateNavIcons() {
+  const map = {
+    "index.html": ICONS.home,
+    "equipe.html": ICONS.team,
+    "programme.html": ICONS.calendar,
+    "inscription.html": ICONS.register,
+    "galerie.html": ICONS.gallery,
+    "actualites.html": ICONS.news,
+    "contact.html": ICONS.contact,
+  };
+  document.querySelectorAll("#nav-menu a, #mobile-menu a").forEach((a) => {
+    const href = (a.getAttribute("href") || "").split("/").pop();
+    if (map[href] && !a.querySelector(".icon-svg")) {
+      a.insertAdjacentHTML("afterbegin", map[href] + " ");
+    }
+  });
+}
+
 function initSite() {
   const content = getContent();
+  if (typeof decorateNavIcons === 'function') decorateNavIcons();
   applyTheme(content);
 
   // Header scroll
@@ -154,10 +189,22 @@ function renderHome() {
   if (heroDesc) heroDesc.textContent = content.hero.description;
   if (heroImg && content.hero.image) heroImg.src = content.hero.image;
 
-  // Stats
+  // Stats — enrichir Joueurs / Catégories depuis l'effectif (dossiers)
   const statsGrid = document.getElementById("stats-grid");
-  if (statsGrid && content.stats) {
-    statsGrid.innerHTML = content.stats
+  if (statsGrid) {
+    let stats = (content.stats || []).map((s) => ({ ...s }));
+    if (typeof getRosterStats === "function") {
+      const rs = getRosterStats(content);
+      let hasP = false, hasC = false;
+      stats = stats.map((s) => {
+        if (/joueur/i.test(s.label)) { hasP = true; return { ...s, value: String(rs.players) }; }
+        if (/catégor/i.test(s.label)) { hasC = true; return { ...s, value: String(rs.categories) }; }
+        return s;
+      });
+      if (!hasP) stats.unshift({ label: "Joueurs", value: String(rs.players) });
+      if (!hasC) stats.splice(1, 0, { label: "Catégories", value: String(rs.categories) });
+    }
+    statsGrid.innerHTML = stats
       .map(
         (s) => `
       <div>
@@ -275,19 +322,24 @@ function renderGallery() {
   const grid = document.getElementById("gallery-full");
   if (!grid || !content.gallery) return;
 
+  grid.classList.add("gallery-masonry");
+  grid.classList.remove("album-grid");
+
+  const sizes = ["size-sm", "size-md", "size-lg", "size-md", "size-sm", "size-lg"];
   grid.innerHTML = content.gallery
-    .map(
-      (g, i) => `
-    <div class="album-item" onclick="openLightbox(getContent().gallery, ${i})">
+    .map((g, i) => {
+      const sizeClass = g.size || sizes[i % sizes.length];
+      return `
+    <div class="album-item ${sizeClass}" onclick="openLightbox(getContent().gallery, ${i})">
       ${
         g.type === "video"
           ? `<div class="play-badge"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-             <img src="${getVideoThumb(g)}" alt="${g.title}" loading="lazy">`
+             <img src="${getVideoThumb(g)}" alt="${g.title || ""}" loading="lazy">`
           : `<img src="${g.src}" alt="${g.title || ""}" loading="lazy" decoding="async">`
       }
       <div class="caption">${g.title || ""}</div>
-    </div>`
-    )
+    </div>`;
+    })
     .join("");
 }
 
@@ -328,29 +380,26 @@ function renderNews() {
 // ========== CONTACT ==========
 function renderContact() {
   const content = getContent();
-  const info = document.getElementById("contact-info");
-  if (info && content.contact) {
-    info.innerHTML = `
-      <div class="space-y-4">
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <div><p class="font-medium">Email</p><a href="mailto:${content.contact.email}" class="text-gray-400 hover:text-primary">${content.contact.email}</a></div>
-        </div>
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          <div><p class="font-medium">Téléphone</p><a href="tel:${content.contact.phone}" class="text-gray-400 hover:text-primary">${content.contact.phone}</a></div>
-        </div>
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <div><p class="font-medium">Adresse</p><p class="text-gray-400">${content.contact.address}</p></div>
-        </div>
-        <div class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <div><p class="font-medium">Horaires</p><p class="text-gray-400">${content.contact.hours || ""}</p></div>
-        </div>
-      </div>
-    `;
-  }
+  const c = content.contact || {};
+  const box = document.getElementById("contact-info") || document.getElementById("contact-details");
+  if (!box) return;
+  box.innerHTML = `
+    <div class="contact-icon-row mb-4">
+      <div class="icon-wrap text-primary">${ICONS.contact}</div>
+      <div><p class="text-xs text-gray-500 uppercase">Email</p><a class="text-white hover:text-primary" href="mailto:${c.email || ""}">${c.email || "—"}</a></div>
+    </div>
+    <div class="contact-icon-row mb-4">
+      <div class="icon-wrap text-primary">${ICONS.phone}</div>
+      <div><p class="text-xs text-gray-500 uppercase">Téléphone</p><a class="text-white hover:text-primary" href="tel:${(c.phone || "").replace(/\s/g, "")}">${c.phone || "—"}</a></div>
+    </div>
+    <div class="contact-icon-row mb-4">
+      <div class="icon-wrap text-primary">${ICONS.map}</div>
+      <div><p class="text-xs text-gray-500 uppercase">Adresse</p><p>${c.address || "—"}</p></div>
+    </div>
+    <div class="contact-icon-row">
+      <div class="icon-wrap text-primary">${ICONS.clock}</div>
+      <div><p class="text-xs text-gray-500 uppercase">Horaires</p><p>${c.hours || "—"}</p></div>
+    </div>`;
 }
 
 // ========== PROGRAMME / EVENTS ==========
@@ -410,7 +459,7 @@ function renderProgramme() {
               ${e.location || ""}
             </p>
             ${
-              e.bookable && !isPast
+              false && e.bookable && !isPast
                 ? `<button onclick="openReserveModal(${e.id})" class="btn-primary text-sm px-4 py-2 rounded-full font-medium ${remaining === 0 ? "opacity-50 cursor-not-allowed" : ""}" ${remaining === 0 ? "disabled" : ""}>
                     ${remaining === 0 ? "Complet" : `Réserver${remaining != null ? ` (${remaining} places)` : ""}`}
                    </button>`

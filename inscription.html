@@ -137,33 +137,47 @@
           </div>
 
           <h2 class="font-semibold text-lg text-primary pt-2">Paiement de la cotisation</h2>
-          <p class="text-sm text-gray-400">Indiquez si vous avez déjà payé (MVola, Orange Money, espèces…). Le club confirmera ensuite dans l’admin.</p>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="admin-label">Montant (Ar) *</label>
-              <input type="number" id="ins-amount" required min="0" class="admin-input" placeholder="ex: 50000">
+          <p id="pay-instructions" class="text-sm text-gray-400 mb-4">Choisissez un moyen de paiement et envoyez au destinataire indiqué. Le club validera ensuite dans l’admin.</p>
+
+          <div class="bg-black/30 border border-white/10 rounded-xl p-4 mb-4 space-y-3">
+            <p class="text-sm text-gray-400 flex items-center gap-2">
+              <svg class="icon-svg text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              Destinataire des paiements
+            </p>
+            <p class="font-semibold text-lg sm:text-xl" id="pay-receiver-name">—</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-2">
+              <div class="pay-method-card">
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">MVola</p>
+                  <p class="font-mono text-primary text-base break-all" id="pay-mvola">—</p>
+                </div>
+              </div>
+              <div class="pay-method-card">
+                <div>
+                  <p class="text-xs text-gray-500 uppercase tracking-wide">Orange Money</p>
+                  <p class="font-mono text-primary text-base break-all" id="pay-orange">—</p>
+                </div>
+              </div>
             </div>
+            <p class="text-xs text-gray-500 mt-2" id="pay-especes"></p>
+          </div>
+
+          <div class="space-y-4">
             <div>
-              <label class="admin-label">Statut paiement *</label>
-              <select id="ins-pay-status" required class="admin-input">
-                <option value="unpaid">Pas encore payé</option>
-                <option value="pending">Payé — en attente de validation</option>
-              </select>
-            </div>
-            <div>
-              <label class="admin-label">Moyen de paiement</label>
+              <label class="admin-label">Moyen de paiement envisagé</label>
               <select id="ins-pay-method" class="admin-input">
-                <option value="">—</option>
+                <option value="">Choisir…</option>
                 <option value="mvola">MVola</option>
                 <option value="orange_money">Orange Money</option>
-                <option value="especes">Espèces</option>
+                <option value="especes">Espèces (au club)</option>
                 <option value="virement">Virement</option>
                 <option value="autre">Autre</option>
               </select>
             </div>
             <div>
-              <label class="admin-label">Référence / n° de transaction</label>
-              <input type="text" id="ins-pay-ref" class="admin-input" placeholder="Si déjà payé">
+              <label class="admin-label">N° de transaction (optionnel)</label>
+              <input type="text" id="ins-pay-ref" class="admin-input" placeholder="Si vous avez déjà envoyé l’argent">
+              <p class="text-xs text-gray-500 mt-1">Laissez vide si vous paierez plus tard. Le club confirmera le paiement.</p>
             </div>
           </div>
 
@@ -186,6 +200,17 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await loadContent();
       initSite();
+      const c = getContent();
+      const pi = c.paymentInfo || {};
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
+      set('pay-receiver-name', pi.receiverName);
+      set('pay-mvola', pi.mvola);
+      set('pay-orange', pi.orangeMoney);
+      set('pay-especes', pi.especesNote || '');
+      if (pi.instructions) {
+        const ins = document.getElementById('pay-instructions');
+        if (ins) ins.textContent = pi.instructions;
+      }
       document.getElementById('menu-toggle')?.addEventListener('click', () => {
         document.getElementById('mobile-menu')?.classList.toggle('hidden');
       });
@@ -229,8 +254,8 @@
           address: document.getElementById('ins-address').value.trim(),
           medicalNotes: document.getElementById('ins-medical').value.trim(),
           photoUrl: document.getElementById('ins-photo-url')?.value.trim() || '',
-          paymentAmount: +document.getElementById('ins-amount').value || 0,
-          paymentStatus: document.getElementById('ins-pay-status').value,
+          paymentAmount: 0,
+          paymentStatus: (document.getElementById('ins-pay-ref').value.trim() ? 'pending' : 'unpaid'),
           paymentMethod: document.getElementById('ins-pay-method').value,
           paymentRef: document.getElementById('ins-pay-ref').value.trim(),
           status: 'pending',

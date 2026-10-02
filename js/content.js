@@ -43,6 +43,21 @@ const DEFAULT_CONTENT = {
   footer: {
     text: "TANA CITY — Passion, discipline et esprit d'équipe.",
   },
+  // Infos paiement cotisation (affichées à l'inscription)
+  paymentInfo: {
+    receiverName: "Trésorier TANA CITY",
+    mvola: "034 00 000 00",
+    orangeMoney: "032 00 000 00",
+    especesNote: "Au club-house pendant les horaires d'ouverture",
+    instructions: "Envoyez la cotisation au nom et numéro indiqués, puis notez éventuellement le n° de transaction ci-dessous.",
+  },
+  // Effectif complet par catégorie (dossiers) — distinct de l'Équipe (grands joueurs)
+  monthlyPayments: [],
+  roster: [
+    { id: 1, firstName: "Jean", lastName: "Rakoto", category: "U13", gender: "M", birthDate: "2013-05-10", photo: "", number: "7" },
+    { id: 2, firstName: "Marie", lastName: "Raso", category: "U15", gender: "F", birthDate: "2011-08-22", photo: "", number: "10" },
+    { id: 3, firstName: "Paul", lastName: "Andry", category: "Senior", gender: "M", birthDate: "1998-01-15", photo: "", number: "9" },
+  ],
   team: {
     title: "Notre Équipe",
     description: "Découvrez les joueurs et le staff qui font briller le club.",
@@ -102,7 +117,7 @@ const DEFAULT_CONTENT = {
       endTime: "21:00",
       location: "Stade Municipal - Terrain 1",
       description: "Séance technique + tactique. Présence obligatoire.",
-      bookable: true,
+      bookable: false,
       capacity: 25,
       category: "Senior",
     },
@@ -129,7 +144,7 @@ const DEFAULT_CONTENT = {
       endTime: "12:00",
       location: "Terrain annexe",
       description: "Travail physique et technique pour les U15.",
-      bookable: true,
+      bookable: false,
       capacity: 18,
       category: "U15",
     },
@@ -142,7 +157,7 @@ const DEFAULT_CONTENT = {
       endTime: "18:00",
       location: "Complexe sportif",
       description: "Première journée du tournoi annuel. Restauration sur place.",
-      bookable: true,
+      bookable: false,
       capacity: 200,
       category: "Tous",
     },
@@ -224,6 +239,9 @@ function mergeContent(stored) {
   if (stored.results) merged.results = stored.results;
   if (stored.reservations) merged.reservations = stored.reservations;
   if (stored.sponsors) merged.sponsors = stored.sponsors;
+  if (stored.roster) merged.roster = stored.roster;
+  if (stored.monthlyPayments) merged.monthlyPayments = stored.monthlyPayments;
+  merged.paymentInfo = { ...base.paymentInfo, ...(stored.paymentInfo || {}) };
   return merged;
 }
 
@@ -553,6 +571,19 @@ async function deleteInscription(id) {
   return true;
 }
 
+
+function getRosterStats(content) {
+  const roster = content.roster || [];
+  const cats = new Set(roster.map((p) => p.category).filter(Boolean));
+  return {
+    players: roster.length,
+    categories: cats.size,
+    byCategory: [...cats].sort().map((c) => ({
+      category: c,
+      count: roster.filter((p) => p.category === c).length,
+    })),
+  };
+}
 
 function applyTheme(content) {
   const root = document.documentElement;

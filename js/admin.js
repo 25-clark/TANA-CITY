@@ -95,6 +95,19 @@ function showAdmin() {
   setupTabs();
   setupEditors();
   refreshInscriptionsAdmin();
+  ["filter-mp-month", "filter-mp-search"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", () => { if (typeof renderMonthlyPayments === "function") renderMonthlyPayments(); });
+    document.getElementById(id)?.addEventListener("input", () => { if (typeof renderMonthlyPayments === "function") renderMonthlyPayments(); });
+  });
+  document.getElementById("mp-player")?.addEventListener("change", (e) => {
+    const opt = e.target.options[e.target.selectedIndex];
+    if (opt && opt.value !== "") {
+      const cat = document.getElementById("mp-category");
+      if (cat && opt.dataset.cat) cat.value = opt.dataset.cat;
+      const name = document.getElementById("mp-name");
+      if (name && opt.dataset.name) name.value = opt.dataset.name;
+    }
+  });
   // Filtres inscriptions
   ["filter-category", "filter-gender", "filter-age", "filter-payment", "filter-status", "filter-search"].forEach((id) => {
     const el = document.getElementById(id);
@@ -130,6 +143,17 @@ function populateForm() {
   document.getElementById("primary-color").value = content.site.primaryColor || "#16a34a";
   document.getElementById("accent-color").value = content.site.accentColor || "#22c55e";
   document.getElementById("footer-text-input").value = content.footer?.text || "";
+  const pi = content.paymentInfo || {};
+  const pr = document.getElementById("pay-receiver");
+  if (pr) pr.value = pi.receiverName || "";
+  const pm = document.getElementById("pay-mvola");
+  if (pm) pm.value = pi.mvola || "";
+  const po = document.getElementById("pay-orange");
+  if (po) po.value = pi.orangeMoney || "";
+  const pe = document.getElementById("pay-especes");
+  if (pe) pe.value = pi.especesNote || "";
+  const pin = document.getElementById("pay-instructions");
+  if (pin) pin.value = pi.instructions || "";
   document.getElementById("cta-title-input").value = content.cta?.title || "";
   document.getElementById("cta-text-input").value = content.cta?.text || "";
 
@@ -153,6 +177,9 @@ function populateForm() {
   renderPlayersEditor();
   renderNewsEditor();
   renderGalleryEditor();
+  if (typeof renderRosterFolders === 'function') renderRosterFolders();
+  if (typeof fillMpPlayerSelect === 'function') fillMpPlayerSelect();
+  if (typeof renderMonthlyPayments === 'function') renderMonthlyPayments();
 }
 
 function setupEditors() {
@@ -373,15 +400,23 @@ function renderGalleryEditor() {
 function removeGallery(i) {
   content.gallery.splice(i, 1);
   renderGalleryEditor();
+  if (typeof renderRosterFolders === 'function') renderRosterFolders();
 }
 
 function collectFormToContent() {
+  if (typeof collectRosterFromForm === 'function') collectRosterFromForm();
   content.site.name = document.getElementById("site-name-input").value;
   content.site.logo = document.getElementById("site-logo-input").value;
   content.site.primaryColor = document.getElementById("primary-color").value;
   content.site.accentColor = document.getElementById("accent-color").value;
   content.footer = content.footer || {};
   content.footer.text = document.getElementById("footer-text-input").value;
+  content.paymentInfo = content.paymentInfo || {};
+  content.paymentInfo.receiverName = document.getElementById("pay-receiver")?.value || "";
+  content.paymentInfo.mvola = document.getElementById("pay-mvola")?.value || "";
+  content.paymentInfo.orangeMoney = document.getElementById("pay-orange")?.value || "";
+  content.paymentInfo.especesNote = document.getElementById("pay-especes")?.value || "";
+  content.paymentInfo.instructions = document.getElementById("pay-instructions")?.value || "";
   content.cta = content.cta || {};
   content.cta.title = document.getElementById("cta-title-input").value;
   content.cta.text = document.getElementById("cta-text-input").value;
@@ -682,6 +717,16 @@ function bindAdminActions() {
         if (content.news?.[i]) content.news[i].image = url;
       }, 1200);
     }
+    if (tEl.matches("[data-roster-photo-file]")) {
+      const i = +tEl.dataset.rosterPhotoFile;
+      const file = tEl.files && tEl.files[0];
+      if (!file) return;
+      fileToWebpOrBase64(file, (url) => {
+        const inp = document.querySelector(`[data-roster-photo="${i}"]`);
+        if (inp) inp.value = url;
+        if (content.roster?.[i]) content.roster[i].photo = url;
+      }, 800);
+    }
     if (tEl.matches("[data-gal-file]")) {
       const i = +tEl.dataset.galFile;
       const file = tEl.files && tEl.files[0];
@@ -706,6 +751,30 @@ function bindAdminActions() {
     if (!t) return;
     const id = t.id;
 
+    if (id === "btn-add-payment") {
+      addMonthlyPaymentFromForm();
+    }
+    if (id === "btn-refresh-mp") {
+      renderMonthlyPayments();
+    }
+    if (id === "add-roster-player") {
+      content.roster = content.roster || [];
+      content.roster.push({
+        id: Date.now(),
+        firstName: "Nouveau",
+        lastName: "Joueur",
+        category: "U13",
+        gender: "M",
+        birthDate: "",
+        photo: "",
+        number: "",
+      });
+      renderRosterFolders();
+    }
+    if (id === "sync-stats-roster") {
+      collectRosterFromForm();
+      syncStatsFromRoster();
+    }
     if (id === "add-stat") {
       content.stats = content.stats || [];
       content.stats.push({ label: "Nouveau", value: "0" });
@@ -869,6 +938,215 @@ function bindAdminActions() {
   };
 })();
 
+
+
+
+// ========== ROSTER (dossiers par catégorie) ==========
+function renderRosterFolders() {
+  const el = document.getElementById("roster-folders");
+  if (!el) return;
+  content.roster = content.roster || [];
+  const cats = {};
+  content.roster.forEach((p, i) => {
+    const c = p.category || "Sans catégorie";
+    if (!cats[c]) cats[c] = [];
+    cats[c].push({ ...p, _i: i });
+  });
+  const order = ["U7","U9","U11","U13","U15","U17","U20","Senior","Féminines","Loisir","Sans catégorie"];
+  const keys = Object.keys(cats).sort((a, b) => {
+    const ia = order.indexOf(a); const ib = order.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+  if (!keys.length) {
+    el.innerHTML = '<p class="text-gray-500 text-sm">Aucun joueur dans l\'effectif. Cliquez sur + Ajouter un joueur.</p>';
+    return;
+  }
+  el.innerHTML = keys.map((cat) => {
+    const list = cats[cat];
+    const id = "folder-" + cat.replace(/\s+/g, "_");
+    return `
+    <details class="border border-white/10 rounded-xl overflow-hidden" open>
+      <summary class="cursor-pointer px-4 py-3 bg-white/5 hover:bg-white/10 flex justify-between items-center font-medium">
+        <span>📁 ${escapeAttr(cat)}</span>
+        <span class="text-sm text-gray-400">${list.length} joueur(s)</span>
+      </summary>
+      <div class="p-3 space-y-3 border-t border-white/5">
+        ${list.map((p) => `
+          <div class="border border-white/10 rounded-lg p-3 grid md:grid-cols-2 gap-2">
+            <div><label class="admin-label">Prénom</label><input class="admin-input" data-roster-fn="${p._i}" value="${escapeAttr(p.firstName || "")}"></div>
+            <div><label class="admin-label">Nom</label><input class="admin-input" data-roster-ln="${p._i}" value="${escapeAttr(p.lastName || "")}"></div>
+            <div><label class="admin-label">Catégorie</label>
+              <select class="admin-input" data-roster-cat="${p._i}">
+                ${["U7","U9","U11","U13","U15","U17","U20","Senior","Féminines","Loisir"].map((c) =>
+                  `<option value="${c}" ${(p.category||"")===c?"selected":""}>${c}</option>`
+                ).join("")}
+              </select>
+            </div>
+            <div><label class="admin-label">Sexe</label>
+              <select class="admin-input" data-roster-gender="${p._i}">
+                <option value="M" ${p.gender==="M"?"selected":""}>M</option>
+                <option value="F" ${p.gender==="F"?"selected":""}>F</option>
+              </select>
+            </div>
+            <div><label class="admin-label">Naissance</label><input type="date" class="admin-input" data-roster-birth="${p._i}" value="${p.birthDate||""}"></div>
+            <div><label class="admin-label">N°</label><input class="admin-input" data-roster-num="${p._i}" value="${escapeAttr(p.number||"")}"></div>
+            <div class="md:col-span-2"><label class="admin-label">Photo (URL ou upload)</label>
+              <input class="admin-input mb-1" data-roster-photo="${p._i}" value="${escapeAttr(p.photo||"")}" placeholder="https://...">
+              <input type="file" accept="image/*" data-roster-photo-file="${p._i}" class="text-sm text-gray-400">
+            </div>
+            <div class="md:col-span-2 flex justify-end">
+              <button type="button" class="text-red-400 text-sm" onclick="removeRosterPlayer(${p._i})">Supprimer</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </details>`;
+  }).join("");
+}
+
+function removeRosterPlayer(i) {
+  content.roster.splice(i, 1);
+  renderRosterFolders();
+}
+window.removeRosterPlayer = removeRosterPlayer;
+
+function collectRosterFromForm() {
+  document.querySelectorAll("[data-roster-fn]").forEach((inp) => {
+    const i = +inp.dataset.rosterFn;
+    if (content.roster[i]) content.roster[i].firstName = inp.value;
+  });
+  document.querySelectorAll("[data-roster-ln]").forEach((inp) => {
+    const i = +inp.dataset.rosterLn;
+    if (content.roster[i]) content.roster[i].lastName = inp.value;
+  });
+  document.querySelectorAll("[data-roster-cat]").forEach((inp) => {
+    const i = +inp.dataset.rosterCat;
+    if (content.roster[i]) content.roster[i].category = inp.value;
+  });
+  document.querySelectorAll("[data-roster-gender]").forEach((inp) => {
+    const i = +inp.dataset.rosterGender;
+    if (content.roster[i]) content.roster[i].gender = inp.value;
+  });
+  document.querySelectorAll("[data-roster-birth]").forEach((inp) => {
+    const i = +inp.dataset.rosterBirth;
+    if (content.roster[i]) content.roster[i].birthDate = inp.value;
+  });
+  document.querySelectorAll("[data-roster-num]").forEach((inp) => {
+    const i = +inp.dataset.rosterNum;
+    if (content.roster[i]) content.roster[i].number = inp.value;
+  });
+  document.querySelectorAll("[data-roster-photo]").forEach((inp) => {
+    const i = +inp.dataset.rosterPhoto;
+    if (content.roster[i]) content.roster[i].photo = inp.value;
+  });
+}
+
+function syncStatsFromRoster() {
+  const rs = getRosterStats(content);
+  content.stats = content.stats || [];
+  // Update or set Joueurs / Catégories
+  let foundP = false, foundC = false;
+  content.stats.forEach((s) => {
+    if (/joueur/i.test(s.label)) { s.value = String(rs.players); foundP = true; }
+    if (/catégor/i.test(s.label)) { s.value = String(rs.categories); foundC = true; }
+  });
+  if (!foundP) content.stats.unshift({ label: "Joueurs", value: String(rs.players) });
+  if (!foundC) content.stats.splice(1, 0, { label: "Catégories", value: String(rs.categories) });
+  renderStatsEditor();
+  alert("Stats mises à jour : " + rs.players + " joueurs, " + rs.categories + " catégories actives.");
+}
+
+
+
+// ========== PAIEMENTS MENSUELS ==========
+function fillMpPlayerSelect() {
+  const sel = document.getElementById("mp-player");
+  if (!sel) return;
+  const roster = content.roster || [];
+  sel.innerHTML = '<option value="">— Choisir dans l\'effectif —</option>' +
+    roster.map((r, i) => {
+      const label = `${r.firstName || ""} ${r.lastName || ""} (${r.category || ""})`.trim();
+      return `<option value="${i}" data-cat="${escapeAttr(r.category || "")}" data-name="${escapeAttr((r.firstName || "") + " " + (r.lastName || ""))}">${escapeAttr(label)}</option>`;
+    }).join("");
+}
+
+function renderMonthlyPayments() {
+  const el = document.getElementById("monthly-payments-list");
+  if (!el) return;
+  content.monthlyPayments = content.monthlyPayments || [];
+  const monthF = document.getElementById("filter-mp-month")?.value || "";
+  const q = (document.getElementById("filter-mp-search")?.value || "").toLowerCase().trim();
+  let list = content.monthlyPayments.slice().sort((a, b) => (b.month || "").localeCompare(a.month || "") || (b.paidAt || "").localeCompare(a.paidAt || ""));
+  if (monthF) list = list.filter((x) => x.month === monthF);
+  if (q) list = list.filter((x) => `${x.playerName} ${x.ref} ${x.category}`.toLowerCase().includes(q));
+  if (!list.length) {
+    el.innerHTML = '<p class="text-gray-500 text-sm">Aucun paiement pour ces filtres.</p>';
+    return;
+  }
+  const methodLabel = { mvola: "MVola", orange_money: "Orange Money", especes: "Espèces", virement: "Virement", autre: "Autre" };
+  el.innerHTML = list.map((x) => `
+    <div class="border border-white/10 rounded-xl p-3 flex flex-wrap justify-between gap-2 items-start">
+      <div>
+        <p class="font-semibold">${escapeAttr(x.playerName || "")} <span class="text-gray-400 font-normal text-sm">${escapeAttr(x.category || "")}</span></p>
+        <p class="text-sm text-gray-400">Mois : <span class="text-white">${escapeAttr(x.month || "")}</span> · Date : ${escapeAttr(x.paidAt || "—")}</p>
+        <p class="text-sm">${x.amount != null ? Number(x.amount).toLocaleString("fr-FR") + " Ar" : "—"} · ${methodLabel[x.method] || x.method || ""}</p>
+        <p class="text-xs text-primary font-mono">Réf. : ${escapeAttr(x.ref || "—")}</p>
+        ${x.notes ? `<p class="text-xs text-gray-500">${escapeAttr(x.notes)}</p>` : ""}
+      </div>
+      <button type="button" class="text-red-400 text-sm" onclick="removeMonthlyPayment('${x.id}')">Supprimer</button>
+    </div>
+  `).join("");
+}
+
+function removeMonthlyPayment(id) {
+  content.monthlyPayments = (content.monthlyPayments || []).filter((x) => String(x.id) !== String(id));
+  renderMonthlyPayments();
+}
+window.removeMonthlyPayment = removeMonthlyPayment;
+
+function addMonthlyPaymentFromForm() {
+  const sel = document.getElementById("mp-player");
+  let playerName = (document.getElementById("mp-name")?.value || "").trim();
+  let category = (document.getElementById("mp-category")?.value || "").trim();
+  if (sel && sel.value !== "") {
+    const opt = sel.options[sel.selectedIndex];
+    if (opt) {
+      playerName = playerName || opt.dataset.name || opt.textContent;
+      category = category || opt.dataset.cat || "";
+    }
+  }
+  if (!playerName) {
+    alert("Indiquez un joueur (effectif ou nom libre).");
+    return;
+  }
+  const month = document.getElementById("mp-month")?.value;
+  if (!month) {
+    alert("Choisissez le mois (période).");
+    return;
+  }
+  content.monthlyPayments = content.monthlyPayments || [];
+  content.monthlyPayments.unshift({
+    id: String(Date.now()),
+    playerName,
+    category,
+    month,
+    paidAt: document.getElementById("mp-date")?.value || "",
+    amount: +document.getElementById("mp-amount")?.value || 0,
+    method: document.getElementById("mp-method")?.value || "",
+    ref: (document.getElementById("mp-ref")?.value || "").trim(),
+    notes: (document.getElementById("mp-notes")?.value || "").trim(),
+  });
+  // clear form partial
+  const nameEl = document.getElementById("mp-name");
+  if (nameEl) nameEl.value = "";
+  const refEl = document.getElementById("mp-ref");
+  if (refEl) refEl.value = "";
+  renderMonthlyPayments();
+  alert("Paiement ajouté. Cliquez sur Enregistrer pour le cloud.");
+}
 
 
 // ========== INSCRIPTIONS ADMIN ==========

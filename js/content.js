@@ -425,6 +425,135 @@ async function deleteReservationDb(id) {
   return true;
 }
 
+
+/** Inscriptions (registre joueurs / enfants) — table séparée */
+async function loadInscriptions() {
+  const client = getSupabase();
+  if (client) {
+    try {
+      const { data, error } = await client
+        .from("inscriptions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map(mapInscriptionRow);
+    } catch (e) {
+      console.warn("inscriptions load:", e);
+      return getLocalInscriptions();
+    }
+  }
+  return getLocalInscriptions();
+}
+
+function mapInscriptionRow(r) {
+  return {
+    id: r.id,
+    firstName: r.first_name,
+    lastName: r.last_name,
+    birthDate: r.birth_date,
+    gender: r.gender || "",
+    category: r.category || "",
+    parentName: r.parent_name || "",
+    parentPhone: r.parent_phone || "",
+    parentEmail: r.parent_email || "",
+    address: r.address || "",
+    medicalNotes: r.medical_notes || "",
+      photoUrl: r.photo_url || "",
+    paymentStatus: r.payment_status || "unpaid",
+    paymentAmount: r.payment_amount != null ? Number(r.payment_amount) : 0,
+    paymentMethod: r.payment_method || "",
+    paymentRef: r.payment_ref || "",
+    paymentDate: r.payment_date || "",
+    status: r.status || "pending",
+    notes: r.notes || "",
+    createdAt: r.created_at,
+  };
+}
+
+function getLocalInscriptions() {
+  try {
+    return JSON.parse(localStorage.getItem("fc_inscriptions_v1") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function setLocalInscriptions(list) {
+  localStorage.setItem("fc_inscriptions_v1", JSON.stringify(list));
+}
+
+async function saveInscription(ins) {
+  const client = getSupabase();
+  if (client) {
+    try {
+      const row = {
+        first_name: ins.firstName,
+        last_name: ins.lastName,
+        birth_date: ins.birthDate || null,
+        gender: ins.gender || null,
+        category: ins.category || null,
+        parent_name: ins.parentName || null,
+        parent_phone: ins.parentPhone || null,
+        parent_email: ins.parentEmail || null,
+        address: ins.address || null,
+        medical_notes: ins.medicalNotes || null,
+        photo_url: ins.photoUrl || null,
+        payment_status: ins.paymentStatus || "unpaid",
+        payment_amount: ins.paymentAmount || 0,
+        payment_method: ins.paymentMethod || null,
+        payment_ref: ins.paymentRef || null,
+        status: ins.status || "pending",
+        notes: ins.notes || null,
+      };
+      const { data, error } = await client.from("inscriptions").insert(row).select().single();
+      if (error) throw error;
+      return { ok: true, id: data.id };
+    } catch (e) {
+      console.error(e);
+      return { ok: false, error: e.message || String(e) };
+    }
+  }
+  const list = getLocalInscriptions();
+  ins.id = Date.now();
+  ins.createdAt = new Date().toISOString();
+  list.unshift(ins);
+  setLocalInscriptions(list);
+  return { ok: true, id: ins.id };
+}
+
+async function updateInscription(id, patch) {
+  const client = getSupabase();
+  if (client) {
+    const row = {};
+    if (patch.paymentStatus != null) row.payment_status = patch.paymentStatus;
+    if (patch.paymentAmount != null) row.payment_amount = patch.paymentAmount;
+    if (patch.paymentMethod != null) row.payment_method = patch.paymentMethod;
+    if (patch.paymentRef != null) row.payment_ref = patch.paymentRef;
+    if (patch.paymentDate != null) row.payment_date = patch.paymentDate;
+    if (patch.status != null) row.status = patch.status;
+    if (patch.notes != null) row.notes = patch.notes;
+    if (patch.category != null) row.category = patch.category;
+    const { error } = await client.from("inscriptions").update(row).eq("id", id);
+    if (error) throw error;
+    return true;
+  }
+  const list = getLocalInscriptions().map((x) => (x.id === id ? { ...x, ...patch } : x));
+  setLocalInscriptions(list);
+  return true;
+}
+
+async function deleteInscription(id) {
+  const client = getSupabase();
+  if (client) {
+    const { error } = await client.from("inscriptions").delete().eq("id", id);
+    if (error) throw error;
+    return true;
+  }
+  setLocalInscriptions(getLocalInscriptions().filter((x) => x.id !== id));
+  return true;
+}
+
+
 function applyTheme(content) {
   const root = document.documentElement;
   if (content.site.primaryColor) root.style.setProperty("--color-primary", content.site.primaryColor);

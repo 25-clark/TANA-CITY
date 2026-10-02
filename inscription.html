@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription - TANA CITY</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { primary: 'var(--color-primary)', secondary: 'var(--color-secondary)', accent: 'var(--color-accent)' },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Oswald', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-950 text-white font-sans antialiased">
+  <header id="header" class="fixed top-0 left-0 right-0 z-50 bg-gray-950/90 backdrop-blur border-b border-white/5">
+    <nav class="container mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-white/30 shadow">
+          <img id="site-logo" src="assets/logo.png" alt="TANA CITY" class="w-full h-full object-cover">
+        </div>
+        <span id="site-name" class="text-xl font-display font-bold">TANA CITY</span>
+      </a>
+      <button id="menu-toggle" class="md:hidden p-2 rounded-lg hover:bg-white/10" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <ul id="nav-menu" class="hidden md:flex items-center gap-5 font-medium text-sm">
+        <li><a href="index.html" class="hover:text-primary">Accueil</a></li>
+        <li><a href="equipe.html" class="hover:text-primary">Équipe</a></li>
+        <li><a href="programme.html" class="hover:text-primary">Programme</a></li>
+        <li><a href="inscription.html" class="text-primary font-semibold">Inscription</a></li>
+        <li><a href="galerie.html" class="hover:text-primary">Galerie</a></li>
+        <li><a href="actualites.html" class="hover:text-primary">Actualités</a></li>
+        <li><a href="contact.html" class="hover:text-primary">Contact</a></li>
+      </ul>
+    </nav>
+    <div id="mobile-menu" class="hidden md:hidden bg-gray-900/95 border-t border-white/10">
+      <ul class="flex flex-col p-4 gap-2">
+        <li><a href="index.html" class="block py-2 px-4 rounded hover:bg-white/10">Accueil</a></li>
+        <li><a href="equipe.html" class="block py-2 px-4 rounded hover:bg-white/10">Équipe</a></li>
+        <li><a href="programme.html" class="block py-2 px-4 rounded hover:bg-white/10">Programme</a></li>
+        <li><a href="inscription.html" class="block py-2 px-4 rounded hover:bg-white/10 text-primary">Inscription</a></li>
+        <li><a href="galerie.html" class="block py-2 px-4 rounded hover:bg-white/10">Galerie</a></li>
+        <li><a href="actualites.html" class="block py-2 px-4 rounded hover:bg-white/10">Actualités</a></li>
+        <li><a href="contact.html" class="block py-2 px-4 rounded hover:bg-white/10">Contact</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="pt-28 pb-20">
+    <div class="container mx-auto px-4 max-w-2xl">
+      <div class="text-center mb-10">
+        <h1 class="font-display text-4xl md:text-5xl font-bold mb-4">Inscription au club</h1>
+        <p class="text-gray-400">Inscrivez votre enfant ou un joueur. Ce n’est pas un compte de connexion : c’est une demande d’adhésion au club.</p>
+      </div>
+
+      <div class="bg-gray-900/60 border border-white/10 rounded-2xl p-6 md:p-8">
+        <form id="inscription-form" class="space-y-5">
+          <h2 class="font-semibold text-lg text-primary">Joueur / enfant</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="admin-label">Prénom *</label>
+              <input type="text" id="ins-first" required class="admin-input" placeholder="Prénom">
+            </div>
+            <div>
+              <label class="admin-label">Nom *</label>
+              <input type="text" id="ins-last" required class="admin-input" placeholder="Nom">
+            </div>
+            <div>
+              <label class="admin-label">Date de naissance *</label>
+              <input type="date" id="ins-birth" required class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Sexe *</label>
+              <select id="ins-gender" required class="admin-input">
+                <option value="">Choisir…</option>
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Catégorie souhaitée *</label>
+              <select id="ins-category" required class="admin-input">
+                <option value="">Choisir…</option>
+                <option value="U7">U7</option>
+                <option value="U9">U9</option>
+                <option value="U11">U11</option>
+                <option value="U13">U13</option>
+                <option value="U15">U15</option>
+                <option value="U17">U17</option>
+                <option value="U20">U20</option>
+                <option value="Senior">Senior</option>
+                <option value="Féminines">Féminines</option>
+                <option value="Loisir">Loisir</option>
+              </select>
+            </div>
+          </div>
+
+          <h2 class="font-semibold text-lg text-primary pt-2">Parent / responsable</h2>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="admin-label">Nom du parent / responsable *</label>
+              <input type="text" id="ins-parent" required class="admin-input">
+            </div>
+            <div>
+              <label class="admin-label">Téléphone *</label>
+              <input type="tel" id="ins-phone" required class="admin-input" placeholder="03x xx xxx xx">
+            </div>
+            <div>
+              <label class="admin-label">Email</label>
+              <input type="email" id="ins-email" class="admin-input">
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Adresse</label>
+              <input type="text" id="ins-address" class="admin-input">
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Infos médicales / allergies (optionnel)</label>
+              <textarea id="ins-medical" rows="2" class="admin-input resize-none"></textarea>
+            </div>
+            <div class="md:col-span-2">
+              <label class="admin-label">Photo du joueur (optionnel)</label>
+              <input type="text" id="ins-photo-url" class="admin-input mb-2" placeholder="URL de la photo (https://...)">
+              <input type="file" id="ins-photo-file" accept="image/*" class="text-sm text-gray-400">
+              <p class="text-xs text-gray-500 mt-1">URL ou envoi d’un fichier (optimisé automatiquement)</p>
+              <img id="ins-photo-preview" class="hidden mt-2 w-24 h-24 object-cover rounded-lg border border-white/10" alt="Aperçu">
+            </div>
+          </div>
+
+          <h2 class="font-semibold text-lg text-primary pt-2">Paiement de la cotisation</h2>
+          <p class="text-sm text-gray-400">Indiquez si vous avez déjà payé (MVola, Orange Money, espèces…). Le club confirmera ensuite dans l’admin.</p>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="admin-label">Montant (Ar) *</label>
+              <input type="number" id="ins-amount" required min="0" class="admin-input" placeholder="ex: 50000">
+            </div>
+            <div>
+              <label class="admin-label">Statut paiement *</label>
+              <select id="ins-pay-status" required class="admin-input">
+                <option value="unpaid">Pas encore payé</option>
+                <option value="pending">Payé — en attente de validation</option>
+              </select>
+            </div>
+            <div>
+              <label class="admin-label">Moyen de paiement</label>
+              <select id="ins-pay-method" class="admin-input">
+                <option value="">—</option>
+                <option value="mvola">MVola</option>
+                <option value="orange_money">Orange Money</option>
+                <option value="especes">Espèces</option>
+                <option value="virement">Virement</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+            <div>
+              <label class="admin-label">Référence / n° de transaction</label>
+              <input type="text" id="ins-pay-ref" class="admin-input" placeholder="Si déjà payé">
+            </div>
+          </div>
+
+          <button type="submit" id="ins-submit" class="btn-primary w-full py-3 rounded-xl font-semibold">Envoyer la demande d’inscription</button>
+          <p id="ins-msg" class="text-center text-sm hidden"></p>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gray-900 border-t border-white/5 py-8 text-center text-gray-500 text-sm">
+    <p id="copyright">© TANA CITY</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadContent();
+      initSite();
+      document.getElementById('menu-toggle')?.addEventListener('click', () => {
+        document.getElementById('mobile-menu')?.classList.toggle('hidden');
+      });
+      // Aperçu / upload photo
+      document.getElementById('ins-photo-file')?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height, max = 800;
+          if (w > max) { h = h * max / w; w = max; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          let dataUrl;
+          try { dataUrl = canvas.toDataURL('image/webp', 0.8); if (!dataUrl.startsWith('data:image/webp')) dataUrl = canvas.toDataURL('image/jpeg', 0.85); }
+          catch { dataUrl = canvas.toDataURL('image/jpeg', 0.85); }
+          URL.revokeObjectURL(url);
+          document.getElementById('ins-photo-url').value = dataUrl;
+          const prev = document.getElementById('ins-photo-preview');
+          if (prev) { prev.src = dataUrl; prev.classList.remove('hidden'); }
+        };
+        img.src = url;
+      });
+      document.getElementById('inscription-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('ins-submit');
+        const msg = document.getElementById('ins-msg');
+        btn.disabled = true;
+        msg.classList.add('hidden');
+        const ins = {
+          firstName: document.getElementById('ins-first').value.trim(),
+          lastName: document.getElementById('ins-last').value.trim(),
+          birthDate: document.getElementById('ins-birth').value,
+          gender: document.getElementById('ins-gender').value,
+          category: document.getElementById('ins-category').value,
+          parentName: document.getElementById('ins-parent').value.trim(),
+          parentPhone: document.getElementById('ins-phone').value.trim(),
+          parentEmail: document.getElementById('ins-email').value.trim(),
+          address: document.getElementById('ins-address').value.trim(),
+          medicalNotes: document.getElementById('ins-medical').value.trim(),
+          photoUrl: document.getElementById('ins-photo-url')?.value.trim() || '',
+          paymentAmount: +document.getElementById('ins-amount').value || 0,
+          paymentStatus: document.getElementById('ins-pay-status').value,
+          paymentMethod: document.getElementById('ins-pay-method').value,
+          paymentRef: document.getElementById('ins-pay-ref').value.trim(),
+          status: 'pending',
+        };
+        const result = await saveInscription(ins);
+        btn.disabled = false;
+        if (!result.ok) {
+          msg.textContent = 'Erreur : ' + (result.error || 'réessayez');
+          msg.className = 'text-center text-sm text-red-400';
+          return;
+        }
+        msg.textContent = 'Demande envoyée ! Le club vous contactera pour la suite (validation et paiement).';
+        msg.className = 'text-center text-sm text-green-400';
+        e.target.reset();
+      });
+    });
+  </script>
+</body>
+</html>

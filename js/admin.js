@@ -94,6 +94,19 @@ function showAdmin() {
   populateForm();
   setupTabs();
   setupEditors();
+  refreshInscriptionsAdmin();
+  // Filtres inscriptions
+  ["filter-category", "filter-gender", "filter-age", "filter-payment", "filter-status", "filter-search"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.bound) return;
+    el.dataset.bound = "1";
+    el.addEventListener(id === "filter-search" ? "input" : "change", () => renderInscriptionsAdmin());
+  });
+  const ref = document.getElementById("btn-refresh-ins");
+  if (ref && !ref.dataset.bound) {
+    ref.dataset.bound = "1";
+    ref.addEventListener("click", () => refreshInscriptionsAdmin());
+  }
 }
 
 function setupTabs() {
@@ -277,7 +290,11 @@ function renderPlayersEditor() {
         <div><label class="admin-label">Nom</label><input class="admin-input" data-player-name="${i}" value="${escapeAttr(p.name)}"></div>
         <div><label class="admin-label">Rôle / Poste</label><input class="admin-input" data-player-role="${i}" value="${escapeAttr(p.role)}"></div>
         <div><label class="admin-label">Numéro</label><input class="admin-input" data-player-number="${i}" value="${escapeAttr(p.number || "")}"></div>
-        <div><label class="admin-label">Photo (URL)</label><input class="admin-input" data-player-photo="${i}" value="${escapeAttr(p.photo || "")}"></div>
+        <div class="md:col-span-2"><label class="admin-label">Photo (URL ou upload)</label>
+          <input class="admin-input mb-1" data-player-photo="${i}" value="${escapeAttr(p.photo || "")}" placeholder="https://...">
+          <input type="file" accept="image/*" data-player-photo-file="${i}" class="text-sm text-gray-400">
+          ${p.photo ? `<img src="${p.photo}" class="mt-2 w-16 h-16 object-cover rounded-lg" alt="">` : ""}
+        </div>
         <div class="md:col-span-2"><label class="admin-label">Bio</label><input class="admin-input" data-player-bio="${i}" value="${escapeAttr(p.bio || "")}"></div>
       </div>
     </div>`
@@ -304,7 +321,10 @@ function renderNewsEditor() {
       <div class="grid md:grid-cols-2 gap-3">
         <div class="md:col-span-2"><label class="admin-label">Titre</label><input class="admin-input" data-news-title="${i}" value="${escapeAttr(n.title)}"></div>
         <div><label class="admin-label">Date</label><input type="date" class="admin-input" data-news-date="${i}" value="${n.date || ""}"></div>
-        <div><label class="admin-label">Image URL</label><input class="admin-input" data-news-image="${i}" value="${escapeAttr(n.image || "")}"></div>
+        <div class="md:col-span-2"><label class="admin-label">Image (URL ou upload)</label>
+          <input class="admin-input mb-1" data-news-image="${i}" value="${escapeAttr(n.image || "")}" placeholder="https://...">
+          <input type="file" accept="image/*" data-news-image-file="${i}" class="text-sm text-gray-400">
+        </div>
         <div class="md:col-span-2"><label class="admin-label">Extrait</label><textarea class="admin-input" rows="2" data-news-excerpt="${i}">${escapeHtml(n.excerpt || "")}</textarea></div>
         <div class="md:col-span-2"><label class="admin-label">Contenu complet</label><textarea class="admin-input" rows="4" data-news-content="${i}">${escapeHtml(n.content || "")}</textarea></div>
       </div>
@@ -341,6 +361,8 @@ function renderGalleryEditor() {
         </div>
         <input class="admin-input text-sm" data-gal-title="${i}" value="${escapeAttr(g.title || "")}" placeholder="Titre">
         <input class="admin-input text-sm" data-gal-src="${i}" value="${escapeAttr(g.src || "")}" placeholder="URL image ou embed YouTube">
+        <input type="file" accept="image/*" data-gal-file="${i}" class="text-sm text-gray-400">
+        <p class="text-xs text-gray-500">URL ou upload fichier (images)</p>
         <input class="admin-input text-sm" data-gal-desc="${i}" value="${escapeAttr(g.description || "")}" placeholder="Description">
       </div>
     </div>`
@@ -450,16 +472,30 @@ function collectFormToContent() {
 
 async function saveAll() {
   collectFormToContent();
+  const status = document.getElementById("save-status");
+  if (status) {
+    status.classList.remove("hidden");
+    status.textContent = "Enregistrement…";
+    status.className = "text-center text-sm text-amber-400 mt-2";
+  }
   const ok = await saveContent(content);
   if (ok) {
-    const status = document.getElementById("save-status");
-    status.classList.remove("hidden");
-    status.textContent = isSupabaseConfigured()
-      ? "✓ Enregistré dans le cloud — visible par tous les visiteurs"
-      : "✓ Enregistré localement (configure Supabase pour partager)";
-    setTimeout(() => status.classList.add("hidden"), 5000);
+    // Recharger depuis le cloud pour confirmer
+    try {
+      content = await loadContent(true);
+    } catch (_) {}
+    if (status) {
+      status.className = "text-center text-sm text-green-400 mt-2";
+      status.textContent = isSupabaseConfigured()
+        ? "✓ Enregistré dans le cloud — visible par tous (Équipe, galerie, programme inclus)"
+        : "✓ Enregistré localement seulement";
+      setTimeout(() => status.classList.add("hidden"), 6000);
+    }
     applyTheme(content);
     document.getElementById("admin-site-name").textContent = content.site.name;
+  } else if (status) {
+    status.className = "text-center text-sm text-red-400 mt-2";
+    status.textContent = "Échec de l'enregistrement — vois le message d'erreur";
   }
 }
 
@@ -622,6 +658,48 @@ function bindAdminActions() {
   // Already bound?
   if (window.__adminBound) return;
   window.__adminBound = true;
+
+  // Upload images dynamiques (joueurs, actus)
+  document.addEventListener("change", (e) => {
+    const tEl = e.target;
+    if (tEl.matches("[data-player-photo-file]")) {
+      const i = +tEl.dataset.playerPhotoFile;
+      const file = tEl.files && tEl.files[0];
+      if (!file) return;
+      fileToWebpOrBase64(file, (url) => {
+        const inp = document.querySelector(`[data-player-photo="${i}"]`);
+        if (inp) inp.value = url;
+        if (content.team?.players?.[i]) content.team.players[i].photo = url;
+      }, 800);
+    }
+    if (tEl.matches("[data-news-image-file]")) {
+      const i = +tEl.dataset.newsImageFile;
+      const file = tEl.files && tEl.files[0];
+      if (!file) return;
+      fileToWebpOrBase64(file, (url) => {
+        const inp = document.querySelector(`[data-news-image="${i}"]`);
+        if (inp) inp.value = url;
+        if (content.news?.[i]) content.news[i].image = url;
+      }, 1200);
+    }
+    if (tEl.matches("[data-gal-file]")) {
+      const i = +tEl.dataset.galFile;
+      const file = tEl.files && tEl.files[0];
+      if (!file) return;
+      fileToWebpOrBase64(file, (url) => {
+        const inp = document.querySelector(`[data-gal-src="${i}"]`);
+        if (inp) inp.value = url;
+        if (content.gallery?.[i]) {
+          content.gallery[i].src = url;
+          content.gallery[i].type = "image";
+        }
+        // refresh preview without losing other fields if possible
+        const preview = inp?.closest(".border")?.querySelector("img");
+        if (preview) preview.src = url;
+        else renderGalleryEditor();
+      }, 1200);
+    }
+  });
 
   document.addEventListener("click", (e) => {
     const t = e.target.closest("button, label, [data-action]");
@@ -791,6 +869,124 @@ function bindAdminActions() {
   };
 })();
 
+
+
+// ========== INSCRIPTIONS ADMIN ==========
+let _inscriptionsCache = [];
+
+async function refreshInscriptionsAdmin() {
+  _inscriptionsCache = await loadInscriptions();
+  renderInscriptionsAdmin();
+}
+
+function ageFromBirth(iso) {
+  if (!iso) return "";
+  const b = new Date(iso);
+  const t = new Date();
+  let a = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+  return a;
+}
+
+function renderInscriptionsAdmin() {
+  const el = document.getElementById("inscriptions-list");
+  if (!el) return;
+  const cat = document.getElementById("filter-category")?.value || "";
+  const gender = document.getElementById("filter-gender")?.value || "";
+  const ageRange = document.getElementById("filter-age")?.value || "";
+  const pay = document.getElementById("filter-payment")?.value || "";
+  const status = document.getElementById("filter-status")?.value || "";
+  const q = (document.getElementById("filter-search")?.value || "").toLowerCase().trim();
+
+  let list = _inscriptionsCache.slice();
+  if (cat) list = list.filter((x) => x.category === cat);
+  if (gender) list = list.filter((x) => x.gender === gender);
+  if (pay) list = list.filter((x) => x.paymentStatus === pay);
+  if (status) list = list.filter((x) => x.status === status);
+  if (ageRange) {
+    const [amin, amax] = ageRange.split("-").map(Number);
+    list = list.filter((x) => {
+      const a = ageFromBirth(x.birthDate);
+      if (a === "" || a === null || a === undefined) return false;
+      return a >= amin && a <= amax;
+    });
+  }
+  if (q) {
+    list = list.filter(
+      (x) =>
+        `${x.firstName} ${x.lastName} ${x.parentName} ${x.category || ""}`.toLowerCase().includes(q)
+    );
+  }
+
+  const countEl = document.getElementById("ins-count");
+  if (countEl) countEl.textContent = `${list.length} inscription(s) affichée(s) / ${_inscriptionsCache.length} au total`;
+
+  if (!list.length) {
+    el.innerHTML = '<p class="text-gray-500 text-sm">Aucune inscription pour ces filtres.</p>';
+    return;
+  }
+
+  const payLabel = { unpaid: "Non payé", pending: "À valider", paid: "Payé" };
+  const stLabel = { pending: "En attente", accepted: "Accepté", rejected: "Refusé" };
+  const payColor = { unpaid: "text-red-400", pending: "text-amber-400", paid: "text-green-400" };
+
+  el.innerHTML = list
+    .map((x) => {
+      const age = ageFromBirth(x.birthDate);
+      return `
+      <div class="border border-white/10 rounded-xl p-4 space-y-2">
+        <div class="flex flex-wrap justify-between gap-2">
+          <div class="flex gap-3">
+            ${x.photoUrl ? `<img src="${x.photoUrl}" alt="" class="w-14 h-14 rounded-lg object-cover border border-white/10">` : `<div class="w-14 h-14 rounded-lg bg-white/5 flex items-center justify-center text-xs text-gray-500">Photo</div>`}
+            <div>
+            <p class="font-semibold text-lg">${escapeAttr(x.firstName)} ${escapeAttr(x.lastName)}
+              <span class="text-sm font-normal text-gray-400">${x.gender === "F" ? "♀" : "♂"} ${age !== "" ? "· " + age + " ans" : ""}</span>
+            </p>
+            <p class="text-sm text-primary">${escapeAttr(x.category || "—")}</p>
+            </div>
+          </div>
+          <div class="text-right text-sm">
+            <p class="${payColor[x.paymentStatus] || ""}">${payLabel[x.paymentStatus] || x.paymentStatus} · ${x.paymentAmount || 0} Ar</p>
+            <p class="text-gray-400">${stLabel[x.status] || x.status}</p>
+          </div>
+        </div>
+        <p class="text-sm text-gray-400">Parent : ${escapeAttr(x.parentName)} · ${escapeAttr(x.parentPhone)} ${x.parentEmail ? "· " + escapeAttr(x.parentEmail) : ""}</p>
+        ${x.paymentRef ? `<p class="text-xs text-gray-500">Paiement : ${escapeAttr(x.paymentMethod || "")} · réf. ${escapeAttr(x.paymentRef)}</p>` : ""}
+        ${x.medicalNotes ? `<p class="text-xs text-amber-200/80">Médical : ${escapeAttr(x.medicalNotes)}</p>` : ""}
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400" onclick="adminInsUpdate(${x.id}, {paymentStatus:'paid', paymentDate: new Date().toISOString().slice(0,10)})">Marquer payé</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-primary/20 text-primary" onclick="adminInsUpdate(${x.id}, {status:'accepted'})">Accepter</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-white/10" onclick="adminInsUpdate(${x.id}, {status:'rejected'})">Refuser</button>
+          <button type="button" class="text-xs px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400" onclick="adminInsDelete(${x.id})">Supprimer</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+async function adminInsUpdate(id, patch) {
+  try {
+    await updateInscription(id, patch);
+    await refreshInscriptionsAdmin();
+  } catch (e) {
+    alert("Erreur : " + (e.message || e));
+  }
+}
+async function adminInsDelete(id) {
+  if (!confirm("Supprimer cette inscription ?")) return;
+  try {
+    await deleteInscription(id);
+    await refreshInscriptionsAdmin();
+  } catch (e) {
+    alert("Erreur : " + (e.message || e));
+  }
+}
+window.adminInsUpdate = adminInsUpdate;
+window.adminInsDelete = adminInsDelete;
+
+
 // Always bind once
 bindAdminActions();
+
 
